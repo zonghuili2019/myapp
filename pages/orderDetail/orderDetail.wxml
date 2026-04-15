@@ -1,0 +1,124 @@
+<!--pages/orderDetail/orderDetail.wxml-->
+<view class="container" wx:if="{{order}}">
+  <!-- 订单头部 -->
+  <view class="order-header">
+    <view class="order-status">
+      <text class="status-dot {{order.status}}"></text>
+      <text class="status-text">{{getStatusText(order.status)}}</text>
+    </view>
+    <view class="order-price">
+      <text class="price-symbol">¥</text>
+      <text class="price-amount">{{order.price}}</text>
+    </view>
+  </view>
+
+  <!-- 订单信息 -->
+  <view class="info-card">
+    <view class="info-row">
+      <text class="info-label">订单编号</text>
+      <text class="info-value">{{order.orderId}}</text>
+    </view>
+    <view class="info-row">
+      <text class="info-label">发布时间</text>
+      <text class="info-value">{{order.createdAt}}</text>
+    </view>
+  </view>
+
+  <!-- 需求描述 -->
+  <view class="detail-card">
+    <text class="card-title">需求描述</text>
+    <text class="card-content">{{order.description}}</text>
+  </view>
+
+  <!-- 客户信息 -->
+  <view class="user-card" wx:if="{{order.clientId}}">
+    <view class="user-info">
+      <text class="user-label">客户</text>
+      <text class="user-name">{{order.clientName}}</text>
+    </view>
+    <view class="user-phone" bindtap="makePhoneCall" data-phone="{{order.clientPhone}}">
+      <text class="phone-icon">📞</text>
+      <text class="phone-number">{{order.clientPhone}}</text>
+    </view>
+    <view class="user-location" bindtap="openLocation" data-lat="{{order.clientLocation.latitude}}" data-lng="{{order.clientLocation.longitude}}" data-address="{{order.clientLocation.address}}">
+      <text class="location-icon">📍</text>
+      <text class="location-text">{{order.clientLocation.address}}</text>
+    </view>
+    <view class="contact-btn" bindtap="contactOther" data-user-id="{{order.clientId}}">
+      <text>发送消息</text>
+    </view>
+  </view>
+
+  <!-- 商家信息 -->
+  <view class="user-card" wx:if="{{order.merchantId}}">
+    <view class="user-info">
+      <text class="user-label">商家</text>
+      <text class="user-name">{{merchantInfo.name || '已接单'}}</text>
+    </view>
+    <view class="user-phone" bindtap="makePhoneCall" data-phone="{{merchantInfo.phone}}" wx:if="{{merchantInfo.phone}}">
+      <text class="phone-icon">📞</text>
+      <text class="phone-number">{{merchantInfo.phone}}</text>
+    </view>
+    <view class="contact-btn" bindtap="contactOther" data-user-id="{{order.merchantId}}">
+      <text>发送消息</text>
+    </view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="action-bar" wx:if="{{userType === 'client'}}">
+    <button class="action-btn cancel-btn" bindtap="cancelOrder" wx:if="{{order.status === 'pending'}}">
+      <text>取消订单</text>
+    </button>
+    <button class="action-btn complete-btn" bindtap="completeOrder" wx:if="{{order.status === 'accepted'}}">
+      <text>确认完成</text>
+    </button>
+  </view>
+
+  <!-- 商家操作 -->
+  <view class="action-bar" wx:if="{{userType === 'merchant' && order.status === 'pending'}}">
+    <button class="action-btn accept-btn" bindtap="acceptOrder">
+      <text>接单</text>
+    </button>
+  </view>
+</view>
+
+<!-- 加载状态 -->
+<view class="loading" wx:else>
+  <view class="loading-spinner"></view>
+  <text class="loading-text">加载中...</text>
+</view>
+
+<!-- 取消确认弹窗 -->
+<t-dialog
+  visible="{{showCancelDialog}}"
+  title="确认取消"
+  content="确定要取消这个订单吗？"
+  confirm-btn="确认取消"
+  cancel-btn="取消"
+  bind:confirm="confirmCancel"
+  bind:cancel="closeDialog"
+/>
+
+<!-- 完成确认弹窗 -->
+<t-dialog
+  visible="{{showCompleteDialog}}"
+  title="确认完成"
+  content="确认服务已完成吗？"
+  confirm-btn="确认完成"
+  cancel-btn="取消"
+  bind:confirm="confirmComplete"
+  bind:cancel="closeDialog"
+/>
+
+<script>
+function getStatusText(status) {
+  const statusMap = {
+    'pending': '待接单',
+    'accepted': '已接单',
+    'processing': '服务中',
+    'completed': '已完成',
+    'cancelled': '已取消'
+  };
+  return statusMap[status] || '未知状态';
+}
+</script>

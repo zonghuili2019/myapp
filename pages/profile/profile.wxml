@@ -1,0 +1,91 @@
+<!--pages/profile/profile.wxml-->
+<view class="container" wx:if="{{userInfo}}">
+  <!-- 用户信息卡片 -->
+  <view class="user-card">
+    <view class="user-info" bindtap="editProfile">
+      <image class="user-avatar" src="{{userInfo.avatar}}" mode="aspectFill"></image>
+      <view class="user-detail">
+        <text class="user-name">{{userInfo.nickname}}</text>
+        <text class="user-phone">{{userInfo.phone}}</text>
+      </view>
+      <text class="arrow">›</text>
+    </view>
+
+    <!-- 位置信息 -->
+    <view class="location-info" wx:if="{{location}}">
+      <text class="location-icon">📍</text>
+      <text class="location-text">{{location.address}}</text>
+      <text class="refresh-btn" bindtap="getLocation">刷新位置</text>
+    </view>
+  </view>
+
+  <!-- 功能菜单 -->
+  <view class="menu-section">
+    <view class="menu-card">
+      <view class="menu-item" bindtap="goHome">
+        <text class="menu-icon">🏠</text>
+        <text class="menu-text">返回首页</text>
+        <text class="menu-arrow">›</text>
+      </view>
+      <view class="menu-item" bindtap="contactService">
+        <text class="menu-icon">📞</text>
+        <text class="menu-text">联系客服</text>
+        <text class="menu-arrow">›</text>
+      </view>
+      <view class="menu-item" bindtap="feedback">
+        <text class="menu-icon">💬</text>
+        <text class="menu-text">意见反馈</text>
+        <text class="menu-arrow">›</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 更多选项 -->
+  <view class="menu-section">
+    <view class="menu-card">
+      <view class="menu-item" bindtap="aboutUs">
+        <text class="menu-icon">ℹ️</text>
+        <text class="menu-text">关于我们</text>
+        <text class="menu-arrow">›</text>
+      </view>
+      <view class="menu-item" bindtap="userAgreement">
+        <text class="menu-icon">📄</text>
+        <text class="menu-text">用户协议</text>
+        <text class="menu-arrow">›</text>
+      </view>
+      <view class="menu-item" bindtap="privacyPolicy">
+        <text class="menu-icon">🔒</text>
+        <text class="menu-text">隐私政策</text>
+        <text class="menu-arrow">›</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 退出登录 -->
+  <view class="logout-btn" bindtap="logout">
+    <text>退出登录</text>
+  </view>
+</view>
+
+<!-- 未登录状态 -->
+<view class="container" wx:else>
+  <view class="login-placeholder">
+    <view class="login-icon">👤</view>
+    <text class="login-title">欢迎使用</text>
+    <text class="login-subtitle">登录后可使用全部功能</text>
+    <button class="login-btn" bindtap="goToLogin">
+      <text>微信登录</text>
+    </button>
+  </view>
+</view>
+
+<!-- 退出确认弹窗 -->
+<t-dialog
+  visible="{{showLogoutDialog}}"
+  title="确认退出"
+  content="确定要退出登录吗？"
+  confirm-btn="确认退出"
+  cancel-btn="取消"
+  bind:confirm="confirmLogout"
+  bind:cancel="cancelLogout"
+/>

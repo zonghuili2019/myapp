@@ -1,0 +1,80 @@
+<!--pages/post/post.wxml-->
+<view class="container">
+  <view class="header">
+    <text class="title">发布需求</text>
+    <text class="subtitle">详细描述您的需求，商家会尽快响应</text>
+  </view>
+
+  <!-- 表单 -->
+  <view class="form-card">
+    <!-- 需求标题 -->
+    <view class="form-item">
+      <text class="form-label">需求标题</text>
+      <input 
+        class="form-input" 
+        placeholder="简短描述您的需求，如：文件取送、代买午餐..." 
+        value="{{form.title}}"
+        bindinput="onTitleChange"
+        maxlength="30"
+      />
+    </view>
+
+    <!-- 详细描述 -->
+    <view class="form-item">
+      <text class="form-label">详细描述</text>
+      <textarea 
+        class="form-textarea" 
+        placeholder="请详细描述您的需求，包括时间、地点、具体要求等" 
+        value="{{form.description}}"
+        bindinput="onDescChange"
+        maxlength="500"
+      />
+    </view>
+
+    <!-- 服务位置 -->
+    <view class="form-item">
+      <text class="form-label">服务位置</text>
+      <view class="location-wrapper">
+        <view class="form-input-wrapper" bindtap="chooseLocation">
+          <text class="form-input {{form.location.address ? '' : 'placeholder'}}">
+            {{form.location.address || '点击选择位置'}}
+          </text>
+          <text class="input-suffix">📍</text>
+        </view>
+        <text class="error-tip" wx:if="{{locationError}}">{{locationError}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 提示信息 -->
+  <view class="tips-card">
+    <text class="tips-title">发布提示</text>
+    <view class="tips-list">
+      <view class="tips-item">
+        <text class="tips-icon">✓</text>
+        <text class="tips-text">您的需求将展示给3公里范围内的商家</text>
+      </view>
+      <view class="tips-item">
+        <text class="tips-icon">✓</text>
+        <text class="tips-text">商家接单后可与您联系确认详情</text>
+      </view>
+      <view class="tips-item">
+        <text class="tips-icon">✓</text>
+        <text class="tips-text">请确保描述清晰，以便商家准确服务</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 提交按钮 -->
+  <button class="submit-btn {{submitting ? 'disabled' : ''}}" bindtap="submitPost">
+    {{submitting ? '发布中...' : '立即发布'}}
+  </button>
+
+  <!-- 底部提示 -->
+  <view class="footer">
+    <text>发布即表示同意</text>
+    <text class="link">《服务协议》</text>
+    <text>和</text>
+    <text class="link">《隐私政策》</text>
+  </view>
+</view>

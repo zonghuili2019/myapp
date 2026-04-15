@@ -1,0 +1,91 @@
+<!--pages/chat/chat.wxml-->
+<view class="container" wx:if="{{targetInfo}}">
+  <!-- 聊天头部 -->
+  <view class="chat-header">
+    <view class="header-left" bindtap="goBack">
+      <text class="back-icon">‹</text>
+    </view>
+    <view class="header-info">
+      <image class="avatar" src="{{targetInfo.avatar}}" mode="aspectFill"></image>
+      <text class="name">{{targetInfo.nickname || targetInfo.name}}</text>
+    </view>
+    <view class="header-right">
+      <text class="action-icon">📞</text>
+    </view>
+  </view>
+
+  <!-- 消息列表 -->
+  <scroll-view 
+    class="message-list" 
+    scroll-y="{{true}}"
+    scroll-into-view="{{scrollToView}}"
+    scroll-with-animation="{{scrollWithAnimation}}"
+  >
+    <view class="message-wrapper" wx:if="{{messageList.length === 0}}">
+      <view class="empty-message">
+        <text class="empty-icon">💬</text>
+        <text class="empty-text">开始聊天吧</text>
+      </view>
+    </view>
+
+    <view 
+      class="message-item {{item.isSent ? 'sent' : 'received'}}"
+      wx:for="{{messageList}}"
+      wx:key="id"
+      id="{{item.id}}"
+      data-index="{{index}}"
+      longpress="onLongPress"
+    >
+      <!-- 头像 -->
+      <image class="avatar" src="{{item.senderAvatar}}" mode="aspectFill"></image>
+      
+      <!-- 消息内容 -->
+      <view class="message-content">
+        <text class="message-sender">{{item.senderName}}</text>
+        <view class="message-body" wx:if="{{item.type === 'text'}}">
+          <text class="message-text" wx:if="{{!item.recalled}}">{{item.content}}</text>
+          <text class="message-text recalled" wx:else>{{item.content}}</text>
+        </view>
+        <image class="message-image" src="{{item.content}}" mode="aspectFill" wx:if="{{item.type === 'image'}}"></image>
+        <text class="message-time">{{item.createdAt}}</text>
+      </view>
+    </view>
+
+    <!-- 底部占位 -->
+    <view class="list-bottom"></view>
+  </scroll-view>
+
+  <!-- 输入区域 -->
+  <view class="input-area">
+    <!-- 工具栏 -->
+    <view class="toolbar">
+      <view class="toolbar-item" bindtap="chooseImage">
+        <text class="toolbar-icon">🖼️</text>
+      </view>
+      <view class="toolbar-item" bindtap="onVoiceInput">
+        <text class="toolbar-icon">🎤</text>
+      </view>
+    </view>
+
+    <!-- 输入框 -->
+    <view class="input-wrapper">
+      <input 
+        class="message-input" 
+        placeholder="输入消息..." 
+        value="{{inputText}}"
+        bindinput="onInputChange"
+        confirm-type="send"
+        bindconfirm="sendMessage"
+      />
+      <button class="send-btn" bindtap="sendMessage" wx:if="{{inputText}}">
+        <text class="send-icon">↑</text>
+      </button>
+    </view>
+  </view>
+</view>
+
+<!-- 加载状态 -->
+<view class="loading" wx:else>
+  <view class="loading-spinner"></view>
+  <text class="loading-text">加载中...</text>
+</view>

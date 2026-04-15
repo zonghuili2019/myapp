@@ -1,0 +1,100 @@
+<!--pages/merchant/merchant.wxml-->
+<view class="container" wx:if="{{merchantInfo}}">
+  <!-- 商家信息卡片 -->
+  <view class="merchant-card">
+    <view class="merchant-header">
+      <image class="merchant-logo" src="{{merchantInfo.logo}}" mode="aspectFill"></image>
+      <view class="merchant-info">
+        <text class="merchant-name">{{merchantInfo.name}}</text>
+        <text class="merchant-rating">评分 {{merchantInfo.rating}}/5.0</text>
+      </view>
+    </view>
+    
+    <view class="merchant-desc" wx:if="{{merchantInfo.description}}">
+      <text class="desc-label">商家简介</text>
+      <text class="desc-text">{{merchantInfo.description}}</text>
+    </view>
+
+    <view class="merchant-contact">
+      <view class="contact-item" bindtap="makePhoneCall">
+        <text class="contact-icon">📞</text>
+        <text class="contact-value">{{merchantInfo.phone}}</text>
+      </view>
+      <view class="contact-item" bindtap="openLocation">
+        <text class="contact-icon">📍</text>
+        <text class="contact-value">{{merchantInfo.location.address}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 统计数据 -->
+  <view class="stats-card">
+    <view class="stats-title">服务数据</view>
+    <view class="stats-grid">
+      <view class="stat-item">
+        <text class="stat-value">{{stats.totalOrders}}</text>
+        <text class="stat-label">总订单</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value">{{stats.pendingOrders}}</text>
+        <text class="stat-label">进行中</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value">{{stats.completedOrders}}</text>
+        <text class="stat-label">已完成</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-value">¥{{stats.totalRevenue}}</text>
+        <text class="stat-label">总收入</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 功能入口 -->
+  <view class="function-card">
+    <view class="function-title">功能服务</view>
+    <view class="function-list">
+      <view class="function-item" bindtap="viewNearbyOrders">
+        <view class="function-icon nearby-icon">🔍</view>
+        <view class="function-info">
+          <text class="function-name">附近订单</text>
+          <text class="function-desc">查看3公里范围内的需求</text>
+        </view>
+        <text class="function-arrow">›</text>
+      </view>
+      <view class="function-item" bindtap="viewAllOrders">
+        <view class="function-icon orders-icon">📋</view>
+        <view class="function-info">
+          <text class="function-name">我的订单</text>
+          <text class="function-desc">查看所有接单记录</text>
+        </view>
+        <text class="function-arrow">›</text>
+      </view>
+      <view class="function-item" bindtap="goToChat">
+        <view class="function-icon chat-icon">💬</view>
+        <view class="function-info">
+          <text class="function-name">消息中心</text>
+          <text class="function-desc">与客户沟通交流</text>
+        </view>
+        <text class="function-arrow">›</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部 -->
+  <view class="footer">
+    <view class="footer-item" bindtap="contactService">
+      <text class="footer-icon">📞</text>
+      <text class="footer-text">联系客服</text>
+    </view>
+    <view class="footer-item" bindtap="editMerchantInfo">
+      <text class="footer-icon">✏️</text>
+      <text class="footer-text">编辑资料</text>
+    </view>
+  </view>
+</view>
+
+<view class="loading" wx:else>
+  <view class="loading-spinner"></view>
+  <text class="loading-text">加载中...</text>
+</view>

@@ -1,0 +1,83 @@
+<!--pages/merchantOrders/merchantOrders.wxml-->
+<view class="container">
+  <view class="header">
+    <text class="title">附近订单</text>
+    <text class="subtitle">3公里范围内的客户需求</text>
+  </view>
+
+  <!-- 筛选栏 -->
+  <view class="filter-bar">
+    <view class="filter-item active">
+      <text class="filter-text">全部</text>
+    </view>
+    <view class="filter-item" bindtap="getLocation">
+      <text class="filter-text">刷新位置</text>
+      <text class="filter-icon">📍</text>
+    </view>
+  </view>
+
+  <!-- 订单列表 -->
+  <view class="order-list" wx:if="{{orderList.length > 0}}">
+    <view 
+      class="order-card" 
+      wx:for="{{orderList}}" 
+      wx:key="id"
+      bindtap="viewOrderDetail"
+      data-id="{{item.id}}"
+    >
+      <view class="order-top">
+        <view class="order-status">
+          <text class="status-dot pending"></text>
+          <text class="status-text">待接单</text>
+        </view>
+        <view class="order-distance">
+          <text class="distance-icon">📍</text>
+          <text class="distance-value">{{item.distance}}m</text>
+        </view>
+      </view>
+
+      <view class="order-content">
+        <view class="order-info">
+          <text class="order-title">{{item.title}}</text>
+          <text class="order-desc">{{item.description}}</text>
+        </view>
+        <view class="order-price">
+          <text class="price-symbol">¥</text>
+          <text class="price-amount">{{item.price}}</text>
+        </view>
+      </view>
+
+      <view class="order-location">
+        <text class="location-icon">📍</text>
+        <text class="location-text">{{item.clientLocation.address}}</text>
+      </view>
+
+      <view class="order-client">
+        <text class="client-label">客户</text>
+        <text class="client-phone">{{item.clientPhone}}</text>
+        <view class="contact-btn" bindtap="contactClient" data-user-id="{{item.clientId}}">
+          <text class="contact-icon">💬</text>
+          <text class="contact-text">联系</text>
+        </view>
+      </view>
+
+      <!-- 接单按钮 -->
+      <view class="action-btn" bindtap="acceptOrder" data-id="{{item.id}}">
+        <text>立即接单</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-section" wx:else>
+    <view class="empty-icon">📭</view>
+    <text class="empty-text">暂无附近订单</text>
+    <text class="empty-tip">当前3公里范围内没有新的需求</text>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading-more" wx:if="{{loading && orderList.length > 0}}">
+    <view class="loading-spinner"></view>
+    <text class="loading-text">加载中...</text>
+  </view>
+</view>

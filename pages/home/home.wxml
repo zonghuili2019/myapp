@@ -1,0 +1,138 @@
+<!--pages/home/home.wxml-->
+<view class="container">
+  <!-- 用户信息卡片 -->
+  <view class="user-card" wx:if="{{userInfo}}">
+    <view class="user-info" bindtap="goToProfile">
+      <image class="user-avatar" src="{{userInfo.avatar}}" mode="aspectFill"></image>
+      <view class="user-detail">
+        <text class="user-name">{{userInfo.nickname}}</text>
+        <text class="user-phone">{{userInfo.phone}}</text>
+      </view>
+      <text class="arrow">›</text>
+    </view>
+    
+    <!-- 快捷入口 -->
+    <view class="quick-entry" wx:if="{{userType === 'client'}}">
+      <view class="entry-item" bindtap="goToPost">
+        <view class="entry-icon post-icon">📝</view>
+        <text class="entry-text">发布需求</text>
+      </view>
+      <view class="entry-item" bindtap="viewAllOrders">
+        <view class="entry-icon order-icon">📋</view>
+        <text class="entry-text">我的订单</text>
+      </view>
+      <view class="entry-item" bindtap="goToChat">
+        <view class="entry-icon chat-icon">💬</view>
+        <text class="entry-text">消息中心</text>
+      </view>
+    </view>
+
+    <view class="quick-entry" wx:else>
+      <view class="entry-item" bindtap="goToMerchant">
+        <view class="entry-icon merchant-icon">🏪</view>
+        <text class="entry-text">商家中心</text>
+      </view>
+      <view class="entry-item" bindtap="viewAllOrders">
+        <view class="entry-icon order-icon">📋</view>
+        <text class="entry-text">我的订单</text>
+      </view>
+      <view class="entry-item" bindtap="goToChat">
+        <view class="entry-icon chat-icon">💬</view>
+        <text class="entry-text">消息中心</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 轮播图 -->
+  <view class="banner-section">
+    <swiper 
+      class="banner-swiper" 
+      indicator-dots="{{true}}" 
+      indicator-color="#fff"
+      indicator-active-color="#07c160"
+      autoplay="{{true}}"
+      interval="{{3000}}"
+    >
+      <swiper-item 
+        wx:for="{{bannerList}}" 
+        wx:key="id"
+        bindtap="onBannerTap"
+        data-id="{{item.id}}"
+      >
+        <image class="banner-image" src="{{item.image}}" mode="aspectFill"></image>
+      </swiper-item>
+    </swiper>
+  </view>
+
+  <!-- 服务分类 -->
+  <view class="category-section">
+    <view class="section-header">
+      <text class="section-title">服务分类</text>
+    </view>
+    <scroll-view class="category-list" scroll-x="{{true}}" show-scrollbar="{{false}}">
+      <view 
+        class="category-item" 
+        wx:for="{{categoryList}}" 
+        wx:key="id"
+        bindtap="onCategoryTap"
+        data-name="{{item.name}}"
+      >
+        <view class="category-icon" style="background: {{item.color}}20;">
+          <text style="color: {{item.color}};">{{item.icon}}</text>
+        </view>
+        <text class="category-name">{{item.name}}</text>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 进行中订单 -->
+  <view class="order-section" wx:if="{{orderList.length > 0}}">
+    <view class="section-header">
+      <text class="section-title">进行中订单</text>
+      <text class="section-more" bindtap="viewAllOrders">查看全部 ›</text>
+    </view>
+    <view class="order-list">
+      <view 
+        class="order-card" 
+        wx:for="{{orderList}}" 
+        wx:key="id"
+        bindtap="onOrderTap"
+        data-id="{{item.id}}"
+      >
+        <view class="order-top">
+          <view class="order-status">
+            <text class="status-dot {{item.status}}"></text>
+            <text class="status-text">{{item.status === 'pending' ? '待接单' : item.status === 'accepted' ? '已接单' : item.status === 'processing' ? '服务中' : '已完成'}}</text>
+          </view>
+          <text class="order-time">{{item.createdAt}}</text>
+        </view>
+        <view class="order-content">
+          <view class="order-info">
+            <text class="order-title">{{item.title}}</text>
+            <text class="order-desc">{{item.description}}</text>
+          </view>
+          <view class="order-price">
+            <text class="price-symbol">¥</text>
+            <text class="price-amount">{{item.price}}</text>
+          </view>
+        </view>
+        <view class="order-location">
+          <text class="location-icon">📍</text>
+          <text class="location-text">{{item.clientLocation.address}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-section" wx:else>
+    <view class="empty-icon">📭</view>
+    <text class="empty-text">暂无进行中订单</text>
+    <button class="empty-btn" bindtap="goToPost" wx:if="{{showPostBtn}}">发布第一个需求</button>
+  </view>
+
+  <!-- 底部发布按钮 -->
+  <view class="fab-btn" wx:if="{{showPostBtn}}" bindtap="goToPost">
+    <text class="fab-icon">📝</text>
+  </view>
+</view>
