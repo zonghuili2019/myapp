@@ -85,6 +85,17 @@
     </scroll-view>
   </view>
 
+  <view class="merchant-guide" wx:if="{{userType === 'client'}}">
+    <view class="merchant-guide-main">
+      <view>
+        <text class="merchant-guide-title">商家列表</text>
+        <text class="merchant-guide-desc">支持查看附近商家、打开地图、电话联系并提交预约表单</text>
+      </view>
+      <view class="merchant-guide-badge">新功能</view>
+    </view>
+    <button class="merchant-guide-btn" bindtap="goToMerchantList">去找商家</button>
+  </view>
+
   <!-- 进行中订单 -->
   <view class="order-section" wx:if="{{orderList.length > 0}}">
     <view class="section-header">

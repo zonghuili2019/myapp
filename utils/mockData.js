@@ -16,6 +16,10 @@ function getDefaultLocation() {
   return util.deepClone(DEFAULT_LOCATION);
 }
 
+function buildOrderNo(index) {
+  return `20260415${String(index).padStart(3, '0')}`;
+}
+
 // 模拟延迟
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -27,7 +31,7 @@ const mockUsers = [
     id: 'user_001',
     nickname: '小明',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=user1',
-    phone: '138****1234',
+    phone: '13800138101',
     userType: 'client',
     location: {
       latitude: 22.5431,
@@ -39,7 +43,7 @@ const mockUsers = [
     id: 'user_002',
     nickname: '小红',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=user2',
-    phone: '139****5678',
+    phone: '13900139102',
     userType: 'client',
     location: {
       latitude: 22.545,
@@ -55,27 +59,73 @@ const mockMerchants = [
     id: 'merchant_001',
     name: '快捷跑腿服务',
     logo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=merchant1',
-    phone: '138****9012',
+    phone: '13800139012',
     location: {
       latitude: 22.54,
       longitude: 114.05,
       address: '深圳市南山区跑腿服务站'
     },
     rating: 4.8,
-    description: '提供快速跑腿配送服务'
+    description: '提供文件取送、代买代送、即时配送等高频同城服务。',
+    serviceCategory: '跑腿代送',
+    serviceTags: ['文件取送', '代买代送', '即时配送'],
+    startingPrice: 18,
+    monthlyOrders: 286,
+    eta: '15分钟起'
   },
   {
     id: 'merchant_002',
-    name: '代驾服务',
+    name: '安心代驾',
     logo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=merchant2',
-    phone: '139****3456',
+    phone: '13900133456',
     location: {
       latitude: 22.548,
       longitude: 114.06,
       address: '深圳市南山区代驾服务中心'
     },
     rating: 4.6,
-    description: '专业代驾服务，安全可靠'
+    description: '专业司机随叫随到，支持酒后代驾、接送代驾、长途代驾。',
+    serviceCategory: '代驾服务',
+    serviceTags: ['酒后代驾', '接送代驾', '长途代驾'],
+    startingPrice: 58,
+    monthlyOrders: 174,
+    eta: '20分钟起'
+  },
+  {
+    id: 'merchant_003',
+    name: '邻里家政到家',
+    logo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=merchant3',
+    phone: '13700137654',
+    location: {
+      latitude: 22.5468,
+      longitude: 114.0532,
+      address: '深圳市南山区家政服务驿站'
+    },
+    rating: 4.9,
+    description: '提供保洁、深度清洗、收纳整理等上门家政服务。',
+    serviceCategory: '家政服务',
+    serviceTags: ['日常保洁', '深度清洁', '收纳整理'],
+    startingPrice: 88,
+    monthlyOrders: 213,
+    eta: '2小时内上门'
+  },
+  {
+    id: 'merchant_004',
+    name: '闪电维修师傅',
+    logo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=merchant4',
+    phone: '13600136678',
+    location: {
+      latitude: 22.551,
+      longitude: 114.0625,
+      address: '深圳市南山区便民维修点'
+    },
+    rating: 4.7,
+    description: '覆盖水电维修、家电故障排查、门锁安装等本地维修需求。',
+    serviceCategory: '维修服务',
+    serviceTags: ['水电维修', '家电检修', '门锁安装'],
+    startingPrice: 66,
+    monthlyOrders: 196,
+    eta: '30分钟响应'
   }
 ];
 
@@ -87,7 +137,7 @@ const mockOrders = [
     clientId: 'user_001',
     merchantId: 'merchant_001',
     clientName: '小明',
-    clientPhone: '138****1234',
+    clientPhone: '13800138101',
     clientLocation: {
       latitude: 22.5431,
       longitude: 114.0579,
@@ -105,7 +155,7 @@ const mockOrders = [
     clientId: 'user_002',
     merchantId: null,
     clientName: '小红',
-    clientPhone: '139****5678',
+    clientPhone: '13900139102',
     clientLocation: {
       latitude: 22.545,
       longitude: 114.055,
@@ -123,7 +173,7 @@ const mockOrders = [
     clientId: 'user_001',
     merchantId: 'merchant_001',
     clientName: '小明',
-    clientPhone: '138****1234',
+    clientPhone: '13800138101',
     clientLocation: {
       latitude: 22.5431,
       longitude: 114.0579,
@@ -136,6 +186,8 @@ const mockOrders = [
     price: 1800
   }
 ];
+
+const mockAppointments = [];
 
 // 模拟聊天数据
 const mockMessages = [
@@ -222,6 +274,42 @@ async function mockGetOrderList(params = {}) {
 }
 
 /**
+ * 模拟获取商家列表
+ */
+async function mockGetMerchantList(params = {}) {
+  await delay(300);
+  const center = {
+    lat: params.latitude || DEFAULT_LOCATION.latitude,
+    lng: params.longitude || DEFAULT_LOCATION.longitude
+  };
+
+  let merchants = mockMerchants.map((merchant) => {
+    const distance = util.getDistance(
+      center.lat,
+      center.lng,
+      merchant.location.latitude,
+      merchant.location.longitude
+    );
+
+    return {
+      ...merchant,
+      distance: Math.round(distance * 1000)
+    };
+  });
+
+  if (params.category) {
+    merchants = merchants.filter((merchant) => merchant.serviceCategory === params.category);
+  }
+
+  merchants.sort((a, b) => a.distance - b.distance || b.rating - a.rating);
+
+  return {
+    list: merchants,
+    total: merchants.length
+  };
+}
+
+/**
  * 模拟获取附近订单
  */
 async function mockGetNearbyOrders(params = {}) {
@@ -263,21 +351,88 @@ async function mockCreateOrder(data) {
   await delay(300);
   const newOrder = {
     id: `order_${Date.now()}`,
-    orderId: `20260415${String(mockOrders.length + 1).padStart(3, '0')}`,
+    orderId: buildOrderNo(mockOrders.length + 1),
     clientId: data.clientId,
-    merchantId: null,
+    merchantId: data.merchantId || null,
     clientName: data.clientName,
     clientPhone: data.clientPhone,
     clientLocation: data.location || getDefaultLocation(),
     title: data.title,
     description: data.description,
-    status: 'pending',
+    status: data.status || 'pending',
     createdAt: util.formatDate(new Date(), 'YYYY-MM-DD HH:mm:ss'),
     price: data.price || Math.floor(Math.random() * 50 + 10) * 100
   };
 
+  if (data.extra) {
+    Object.assign(newOrder, data.extra);
+  }
+
   mockOrders.unshift(newOrder);
   return newOrder;
+}
+
+/**
+ * 模拟创建预约
+ */
+async function mockCreateAppointment(data) {
+  await delay(350);
+
+  if (!data || !data.merchantId || !data.serviceType || !data.serviceDate || !data.serviceTime) {
+    throw new Error('预约信息不完整');
+  }
+
+  if (!data.contactName || !data.contactPhone || !data.location || !data.location.address) {
+    throw new Error('联系人信息不完整');
+  }
+
+  const merchant = mockMerchants.find((item) => item.id === data.merchantId);
+  if (!merchant) {
+    throw new Error('商家不存在');
+  }
+
+  const createdAt = util.formatDate(new Date(), 'YYYY-MM-DD HH:mm:ss');
+  const appointment = {
+    id: `booking_${Date.now()}`,
+    merchantId: merchant.id,
+    merchantName: merchant.name,
+    merchantPhone: merchant.phone,
+    clientId: data.clientId || mockUsers[0].id,
+    contactName: data.contactName,
+    contactPhone: data.contactPhone,
+    location: util.deepClone(data.location),
+    serviceType: data.serviceType,
+    serviceDate: data.serviceDate,
+    serviceTime: data.serviceTime,
+    remark: data.remark || '',
+    createdAt,
+    status: 'pending'
+  };
+
+  mockAppointments.unshift(appointment);
+
+  const order = await mockCreateOrder({
+    clientId: appointment.clientId,
+    merchantId: merchant.id,
+    clientName: data.contactName,
+    clientPhone: data.contactPhone,
+    location: data.location,
+    title: `${data.serviceType}预约`,
+    description: `已预约 ${merchant.name}，上门时间 ${data.serviceDate} ${data.serviceTime}${data.remark ? `，备注：${data.remark}` : ''}`,
+    status: 'pending',
+    price: data.estimatedPrice || merchant.startingPrice * 100,
+    extra: {
+      appointmentId: appointment.id,
+      appointmentDate: data.serviceDate,
+      appointmentTime: data.serviceTime,
+      serviceType: data.serviceType
+    }
+  });
+
+  return {
+    appointment,
+    order
+  };
 }
 
 /**
@@ -385,7 +540,12 @@ async function mockMerchantRegister(data) {
     phone: data.phone,
     location: data.location || getDefaultLocation(),
     rating: 5,
-    description: data.description || ''
+    description: data.description || '',
+    serviceCategory: '其他服务',
+    serviceTags: ['预约服务'],
+    startingPrice: 30,
+    monthlyOrders: 0,
+    eta: '随时预约'
   };
 
   mockMerchants.push(newMerchant);
@@ -479,8 +639,10 @@ module.exports = {
   mockLogin,
   mockRegister,
   mockGetOrderList,
+  mockGetMerchantList,
   mockGetNearbyOrders,
   mockCreateOrder,
+  mockCreateAppointment,
   mockAcceptOrder,
   mockGetConversationList,
   mockGetMessageList,
@@ -497,5 +659,6 @@ module.exports = {
   getDefaultLocation,
   getMockOrders: () => mockOrders,
   getMockMerchants: () => mockMerchants,
-  getMockUsers: () => mockUsers
+  getMockUsers: () => mockUsers,
+  getMockAppointments: () => mockAppointments
 };

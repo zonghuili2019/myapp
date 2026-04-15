@@ -10,6 +10,8 @@
     "pages/chat/chat",
     "pages/merchant/merchant",
     "pages/merchantOrders/merchantOrders",
+    "pages/merchantList/merchantList",
+    "pages/booking/booking",
     "pages/profile/profile"
   ],
   "window": {

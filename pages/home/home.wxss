@@ -167,6 +167,62 @@
   color: #666;
 }
 
+.merchant-guide {
+  background: linear-gradient(135deg, #ffffff 0%, #eefaf4 100%);
+  border-radius: 24rpx;
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 12rpx 32rpx rgba(7, 193, 96, 0.08);
+}
+
+.merchant-guide-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24rpx;
+  margin-bottom: 24rpx;
+}
+
+.merchant-guide-title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1f2d3d;
+  margin-bottom: 10rpx;
+}
+
+.merchant-guide-desc {
+  display: block;
+  font-size: 24rpx;
+  color: #667085;
+  line-height: 1.6;
+}
+
+.merchant-guide-badge {
+  padding: 10rpx 20rpx;
+  background: rgba(7, 193, 96, 0.12);
+  color: #07c160;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+}
+
+.merchant-guide-btn {
+  width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
+  border-radius: 44rpx;
+  background: linear-gradient(135deg, #07c160 0%, #06ae56 100%);
+  color: #fff;
+  font-size: 30rpx;
+  font-weight: 500;
+  border: none;
+}
+
+.merchant-guide-btn::after {
+  border: none;
+}
+
 /* 订单区域 */
 .order-section {
   background: #fff;

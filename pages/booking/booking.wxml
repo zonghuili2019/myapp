@@ -1,0 +1,128 @@
+<view class="container" wx:if="{{!loading && merchantInfo}}">
+  <view class="header">
+    <text class="title">预约服务</text>
+    <text class="subtitle">填写预约信息后，商家会按约定时间与您联系</text>
+  </view>
+
+  <view class="merchant-card">
+    <view class="merchant-top">
+      <image class="merchant-logo" src="{{merchantInfo.logo}}" mode="aspectFill"></image>
+      <view class="merchant-main">
+        <text class="merchant-name">{{merchantInfo.name}}</text>
+        <view class="merchant-tags">
+          <text class="merchant-tag category">{{merchantInfo.serviceCategory}}</text>
+          <text class="merchant-tag rating">⭐ {{merchantInfo.rating}}</text>
+          <text class="merchant-tag price">¥{{merchantInfo.startingPrice}} 起</text>
+        </view>
+        <text class="merchant-desc">{{merchantInfo.description}}</text>
+      </view>
+    </view>
+
+    <view class="merchant-contact-row">
+      <view class="contact-pill" bindtap="callMerchant">电话咨询</view>
+      <view class="contact-pill" bindtap="openMerchantLocation">查看地图</view>
+    </view>
+  </view>
+
+  <view class="form-card">
+    <view class="form-item">
+      <text class="form-label">预约项目</text>
+      <input
+        class="form-input"
+        placeholder="如：文件取送、深度保洁、上门维修"
+        value="{{form.serviceType}}"
+        data-field="serviceType"
+        bindinput="onInputChange"
+        maxlength="30"
+      />
+    </view>
+
+    <view class="form-row">
+      <view class="form-item half">
+        <text class="form-label">预约日期</text>
+        <picker mode="date" value="{{form.serviceDate}}" start="{{minDate}}" end="{{maxDate}}" bindchange="onDateChange">
+          <view class="picker-field">{{form.serviceDate}}</view>
+        </picker>
+      </view>
+
+      <view class="form-item half">
+        <text class="form-label">预约时间</text>
+        <picker mode="time" value="{{form.serviceTime}}" bindchange="onTimeChange">
+          <view class="picker-field">{{form.serviceTime}}</view>
+        </picker>
+      </view>
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">联系人</text>
+      <input
+        class="form-input"
+        placeholder="请输入联系人姓名"
+        value="{{form.contactName}}"
+        data-field="contactName"
+        bindinput="onInputChange"
+        maxlength="20"
+      />
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">联系电话</text>
+      <input
+        class="form-input"
+        type="number"
+        placeholder="请输入联系电话"
+        value="{{form.contactPhone}}"
+        data-field="contactPhone"
+        bindinput="onInputChange"
+        maxlength="11"
+      />
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">服务地址</text>
+      <view class="location-field" bindtap="chooseLocation">
+        <text class="location-text {{form.location.address ? '' : 'placeholder'}}">
+          {{form.location.address || '点击选择上门服务地址'}}
+        </text>
+        <text class="location-arrow">📍</text>
+      </view>
+    </view>
+
+    <view class="form-item">
+      <text class="form-label">备注说明</text>
+      <textarea
+        class="form-textarea"
+        placeholder="可填写楼层门牌、特殊要求、提前联系时间等"
+        value="{{form.remark}}"
+        data-field="remark"
+        bindinput="onInputChange"
+        maxlength="200"
+      />
+    </view>
+  </view>
+
+  <view class="tips-card">
+    <text class="tips-title">预约说明</text>
+    <view class="tips-item">
+      <text class="tips-icon">1</text>
+      <text class="tips-text">预约提交后会同步生成订单，方便后续查看服务进度。</text>
+    </view>
+    <view class="tips-item">
+      <text class="tips-icon">2</text>
+      <text class="tips-text">如需加急或确认细节，可先点击上方“电话咨询”。</text>
+    </view>
+    <view class="tips-item">
+      <text class="tips-icon">3</text>
+      <text class="tips-text">请确保联系电话可接通、地址信息准确完整。</text>
+    </view>
+  </view>
+
+  <button class="submit-btn {{submitting ? 'disabled' : ''}}" bindtap="submitBooking">
+    {{submitting ? '提交中...' : '提交预约'}}
+  </button>
+</view>
+
+<view class="loading" wx:else>
+  <view class="loading-spinner"></view>
+  <text class="loading-text">加载中...</text>
+</view>

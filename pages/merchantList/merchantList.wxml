@@ -1,0 +1,119 @@
+<view class="page">
+  <view class="hero-card">
+    <view>
+      <text class="hero-title">附近优选商家</text>
+      <text class="hero-desc">查看商家列表、地图位置，并通过电话或预约表单快速联系</text>
+    </view>
+    <view class="hero-tag">{{summary.total}} 家可预约</view>
+  </view>
+
+  <view class="summary-card">
+    <view class="summary-item">
+      <text class="summary-label">当前位置</text>
+      <text class="summary-value address">{{currentLocation.address || '定位中...'}}</text>
+    </view>
+    <view class="summary-grid">
+      <view class="mini-stat">
+        <text class="mini-stat-value">{{summary.total}}</text>
+        <text class="mini-stat-label">全部商家</text>
+      </view>
+      <view class="mini-stat">
+        <text class="mini-stat-value">{{summary.nearby}}</text>
+        <text class="mini-stat-label">3km内</text>
+      </view>
+      <view class="mini-action" bindtap="refreshLocation">刷新位置</view>
+    </view>
+  </view>
+
+  <view class="map-card">
+    <view class="section-header">
+      <text class="section-title">地图概览</text>
+      <text class="section-subtitle">点击标记可直接打开导航</text>
+    </view>
+    <map
+      class="merchant-map"
+      latitude="{{mapCenter.latitude}}"
+      longitude="{{mapCenter.longitude}}"
+      markers="{{mapMarkers}}"
+      scale="12"
+      show-location="{{true}}"
+      bindmarkertap="onMarkerTap"
+    ></map>
+  </view>
+
+  <view class="filter-card">
+    <scroll-view class="filter-scroll" scroll-x="{{true}}" show-scrollbar="{{false}}">
+      <view
+        class="filter-chip {{item === activeCategory ? 'active' : ''}}"
+        wx:for="{{categoryList}}"
+        wx:key="*this"
+        data-category="{{item}}"
+        bindtap="changeCategory"
+      >
+        {{item}}
+      </view>
+    </scroll-view>
+  </view>
+
+  <view class="merchant-list" wx:if="{{merchantList.length}}">
+    <view class="merchant-card" wx:for="{{merchantList}}" wx:key="id">
+      <view class="merchant-top">
+        <image class="merchant-logo" src="{{item.logo}}" mode="aspectFill"></image>
+        <view class="merchant-main">
+          <view class="merchant-name-row">
+            <text class="merchant-name">{{item.name}}</text>
+            <text class="merchant-distance">{{item.distanceText}}</text>
+          </view>
+          <view class="merchant-meta-row">
+            <text class="merchant-badge rating">⭐ {{item.rating}}</text>
+            <text class="merchant-badge category">{{item.serviceCategory}}</text>
+            <text class="merchant-badge eta">{{item.eta}}</text>
+          </view>
+          <text class="merchant-desc">{{item.description}}</text>
+        </view>
+      </view>
+
+      <view class="tag-list">
+        <text class="tag-item" wx:for="{{item.serviceTags}}" wx:key="*this">{{item}}</text>
+      </view>
+
+      <view class="merchant-info-row">
+        <text class="info-label">起步价</text>
+        <text class="info-value price">{{item.startingPriceText}}</text>
+        <text class="info-divider">·</text>
+        <text class="info-label">月服务</text>
+        <text class="info-value">{{item.monthlyOrders}} 单</text>
+      </view>
+
+      <view class="merchant-address-row">
+        <text class="address-icon">📍</text>
+        <text class="address-text">{{item.location.address}}</text>
+      </view>
+
+      <view class="merchant-address-row">
+        <text class="address-icon">📞</text>
+        <text class="address-text">{{item.phone}}</text>
+      </view>
+
+      <view class="action-row">
+        <view class="action-btn secondary" bindtap="callMerchant" data-phone="{{item.phone}}">电话联系</view>
+        <view
+          class="action-btn secondary"
+          bindtap="openLocation"
+          data-latitude="{{item.location.latitude}}"
+          data-longitude="{{item.location.longitude}}"
+          data-name="{{item.name}}"
+        >
+          地图导航
+        </view>
+        <view class="action-btn primary" bindtap="goBooking" data-id="{{item.id}}">立即预约</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="empty-card" wx:else>
+    <text class="empty-icon">🏪</text>
+    <text class="empty-title">当前分类暂无商家</text>
+    <text class="empty-desc">切换分类或刷新位置后再试试</text>
+  </view>
+</view>

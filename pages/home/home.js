@@ -103,10 +103,21 @@ Page({
 
   onCategoryTap(e) {
     const { name } = e.currentTarget.dataset;
-    util.showToastInfo(`选择了${name}`);
+    const userType = app.globalData.userType || 'client';
+
+    if (userType !== 'client') {
+      util.showToastInfo(`当前为${name}类目，仅支持用户端查看商家`);
+      return;
+    }
+
+    this.goToMerchantList(name);
   },
 
-  onBannerTap() {},
+  onBannerTap() {
+    if ((app.globalData.userType || 'client') === 'client') {
+      this.goToMerchantList();
+    }
+  },
 
   onOrderTap(e) {
     const { id } = e.currentTarget.dataset;
@@ -119,6 +130,10 @@ Page({
     wx.navigateTo({
       url: '/pages/post/post'
     });
+  },
+
+  goToMerchantList(category = '') {
+    util.navigateTo('/pages/merchantList/merchantList', category ? { category } : {});
   },
 
   viewAllOrders() {
