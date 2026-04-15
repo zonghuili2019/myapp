@@ -34,36 +34,15 @@
         "pagePath": "pages/orderList/orderList",
         "text": "订单",
         "iconPath": "images/order.png",
-        "selectedIconPath": "images/order-active.png"
+        "selectedIconPath": "images/order.png"
       },
       {
         "pagePath": "pages/profile/profile",
         "text": "我的",
-        "iconPath": "images/user.png",
-        "selectedIconPath": "images/user-active.png"
+        "iconPath": "images/home.png",
+        "selectedIconPath": "images/home-active.png"
       }
     ]
-  },
-  "usingComponents": {
-    "t-button": "tdesign-miniprogram/button/button",
-    "t-input": "tdesign-miniprogram/input/input",
-    "t-cell": "tdesign-miniprogram/cell/cell",
-    "t-cell-group": "tdesign-miniprogram/cell-group/cell-group",
-    "t-icon": "tdesign-miniprogram/icon/icon",
-    "t-toast": "tdesign-miniprogram/toast/toast",
-    "t-dialog": "tdesign-miniprogram/dialog/dialog",
-    "t-message": "tdesign-miniprogram/message/message",
-    "t-popup": "tdesign-miniprogram/popup/popup",
-    "t-picker": "tdesign-miniprogram/picker/picker",
-    "t-textarea": "tdesign-miniprogram/textarea/textarea",
-    "t-loading": "tdesign-miniprogram/loading/loading",
-    "t-empty": "tdesign-miniprogram/empty/empty",
-    "t-tag": "tdesign-miniprogram/tag/tag",
-    "t-badge": "tdesign-miniprogram/badge/badge",
-    "t-fab": "tdesign-miniprogram/fab/fab",
-    "t-map": "tdesign-miniprogram/map/map",
-    "t-marker": "tdesign-miniprogram/map/marker",
-    "t-search": "tdesign-miniprogram/search/search"
   },
   "sitemapLocation": "sitemap.json",
   "permission": {

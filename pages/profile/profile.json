@@ -2,8 +2,5 @@
   "navigationBarTitleText": "我的",
   "navigationBarBackgroundColor": "#fff",
   "navigationBarTextStyle": "black",
-  "backgroundColor": "#f5f5f5",
-  "usingComponents": {
-    "t-dialog": "tdesign-miniprogram/dialog/dialog"
-  }
+  "backgroundColor": "#f5f5f5"
 }

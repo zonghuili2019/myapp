@@ -126,7 +126,7 @@ const mockOrders = [
 // 模拟聊天数据
 const mockMessages = [
   {
-    conversationId: 'conv_001',
+    conversationId: buildConversationId('user_001', 'merchant_001'),
     userId: 'user_001',
     merchantId: 'merchant_001',
     messages: [
@@ -414,6 +414,29 @@ async function mockGetMerchantOrders(params = {}) {
     list: orders,
     total: orders.length
   };
+}
+
+async function getCurrentLocation() {
+  await delay(150);
+  return getDefaultLocation();
+}
+
+function chooseLocation() {
+  return new Promise((resolve) => {
+    wx.chooseLocation({
+      success: (res) => {
+        resolve({
+          latitude: res.latitude,
+          longitude: res.longitude,
+          address: res.name || res.address || getDefaultLocation().address,
+          detail: res.address || ''
+        });
+      },
+      fail: () => {
+        resolve(getDefaultLocation());
+      }
+    });
+  });
 }
 
 module.exports = {

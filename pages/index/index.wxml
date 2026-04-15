@@ -20,12 +20,10 @@
 
   <!-- 登录区域 -->
   <view class="login-container" wx:else>
-    <!-- 微信授权登录 -->
-    <button 
-      class="login-btn" 
-      open-type="chooseAvatar" 
-      bindchooseavatar="onChooseAvatar"
-      binderror="handleLogin"
+    <button
+      class="login-btn"
+      bindtap="handleLogin"
+      loading="{{isLoggingIn}}"
       disabled="{{isLoggingIn}}"
     >
       <view class="login-icon" wx:if="{{!avatarUrl}}">
@@ -35,7 +33,6 @@
       <text class="login-text">{{isLoggingIn ? '登录中...' : '微信一键登录'}}</text>
     </button>
 
-    <!-- 其他登录方式 -->
     <view class="divider">
       <view class="divider-line"></view>
       <text class="divider-text">其他登录方式</text>
@@ -53,7 +50,6 @@
       </view>
     </view>
 
-    <!-- 底部提示 -->
     <view class="footer-tip">
       <text>登录即表示同意</text>
       <text class="link">《用户协议》</text>

@@ -319,5 +319,6 @@ module.exports = {
   redirectTo,
   switchTab,
   makePhoneCall,
-  openLocation
+  openLocation,
+  getDistance
 };
