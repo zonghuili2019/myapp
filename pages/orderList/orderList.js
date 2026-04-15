@@ -3,10 +3,25 @@ const app = getApp();
 const util = require('../../utils/util');
 const mockData = require('../../utils/mockData');
 
+const STATUS_TEXT_MAP = {
+  pending: '待接单',
+  accepted: '已接单',
+  processing: '服务中',
+  completed: '已完成',
+  cancelled: '已取消'
+};
+
+function formatOrders(orderList) {
+  return (orderList || []).map((order) => ({
+    ...order,
+    statusText: STATUS_TEXT_MAP[order.status] || '未知状态'
+  }));
+}
+
 Page({
   data: {
     userType: 'client',
-    status: '', // 筛选状态
+    status: '',
     orderList: [],
     loading: true,
     hasMore: true,
@@ -23,35 +38,32 @@ Page({
   },
 
   onShow() {
-    this.setData({ page: 1, hasMore: true });
+    this.setData({ page: 1, hasMore: true, orderList: [] });
     this.loadOrderList();
   },
 
-  // 加载订单列表
   async loadOrderList() {
     this.setData({ loading: true });
 
     try {
       const { userType, status, page, pageSize } = this.data;
-      
       let result;
-      
+
       if (userType === 'client') {
         result = await mockData.mockGetOrderList({ status, page, pageSize });
       } else {
         result = await mockData.mockGetMerchantOrders({ status, page, pageSize });
       }
 
-      const newOrders = result.list || [];
-      const currentList = this.data.page === 1 ? [] : this.data.orderList;
-      
+      const newOrders = formatOrders(result.list || []);
+      const currentList = page === 1 ? [] : this.data.orderList;
+
       this.setData({
-        orderList: [...currentList, ...newOrders],
+        orderList: currentList.concat(newOrders),
         hasMore: newOrders.length >= pageSize,
         total: result.total,
         page: page + 1
       });
-
     } catch (err) {
       console.error('加载订单失败', err);
       util.showToastInfo('加载失败，请重试');
@@ -60,35 +72,31 @@ Page({
     }
   },
 
-  // 筛选状态
   filterByStatus(e) {
     const status = e.currentTarget.dataset.status;
-    this.setData({ 
-      status, 
-      page: 1, 
+    this.setData({
+      status,
+      page: 1,
       hasMore: true,
       orderList: []
     });
     this.loadOrderList();
   },
 
-  // 刷新
   onPullDownRefresh() {
-    this.setData({ page: 1, hasMore: true, status: '' });
+    this.setData({ page: 1, hasMore: true, status: '', orderList: [] });
     this.loadOrderList();
     setTimeout(() => {
       wx.stopPullDownRefresh();
     }, 500);
   },
 
-  // 加载更多
   onReachBottom() {
     if (this.data.hasMore && !this.data.loading) {
       this.loadOrderList();
     }
   },
 
-  // 查看订单详情
   viewOrderDetail(e) {
     const { id } = e.currentTarget.dataset;
     wx.navigateTo({
@@ -96,17 +104,20 @@ Page({
     });
   },
 
-  // 联系对方
   contactOther(e) {
-    const { userId } = e.currentTarget.dataset;
-    if (userId) {
-      wx.navigateTo({
-        url: `/pages/chat/chat?userId=${userId}`
-      });
+    const { userId, merchantId } = e.currentTarget.dataset;
+    const resolvedMerchantId = merchantId || (app.globalData.userInfo && app.globalData.userInfo.id);
+
+    if (!userId || !resolvedMerchantId) {
+      util.showToastInfo('当前暂无可用会话');
+      return;
     }
+
+    wx.navigateTo({
+      url: `/pages/chat/chat?userId=${userId}&merchantId=${resolvedMerchantId}`
+    });
   },
 
-  // 返回
   goBack() {
     wx.navigateBack();
   }

@@ -21,19 +21,15 @@ Page({
   },
 
   onShow() {
-    // 刷新数据
-    this.setData({ page: 1, hasMore: true });
+    this.setData({ page: 1, hasMore: true, orderList: [] });
     this.loadNearbyOrders();
   },
 
-  // 加载附近订单
   async loadNearbyOrders() {
     this.setData({ loading: true });
 
     try {
       const { page, pageSize, location } = this.data;
-      
-      // 获取附近订单
       const result = await mockData.mockGetNearbyOrders({
         latitude: location.latitude,
         longitude: location.longitude,
@@ -43,14 +39,13 @@ Page({
       });
 
       const newOrders = result.list || [];
-      const currentList = this.data.page === 1 ? [] : this.data.orderList;
-      
+      const currentList = page === 1 ? [] : this.data.orderList;
+
       this.setData({
-        orderList: [...currentList, ...newOrders],
+        orderList: currentList.concat(newOrders),
         hasMore: newOrders.length >= pageSize,
         page: page + 1
       });
-
     } catch (err) {
       console.error('加载订单失败', err);
       util.showToastInfo('加载失败，请重试');
@@ -59,32 +54,25 @@ Page({
     }
   },
 
-  // 刷新
   onPullDownRefresh() {
-    this.setData({ page: 1, hasMore: true });
+    this.setData({ page: 1, hasMore: true, orderList: [] });
     this.loadNearbyOrders();
     setTimeout(() => {
       wx.stopPullDownRefresh();
     }, 500);
   },
 
-  // 加载更多
   onReachBottom() {
     if (this.data.hasMore && !this.data.loading) {
       this.loadNearbyOrders();
     }
   },
 
-  // 获取位置
   async getLocation() {
     util.showLoading('获取位置中...');
     try {
       const location = await mockData.getCurrentLocation();
-      this.setData({
-        location
-      });
-      // 重新加载订单
-      this.setData({ page: 1, hasMore: true });
+      this.setData({ location, page: 1, hasMore: true, orderList: [] });
       this.loadNearbyOrders();
     } catch (err) {
       util.showToastInfo('获取位置失败');
@@ -93,30 +81,35 @@ Page({
     }
   },
 
-  // 接单
-  async acceptOrder(e) {
+  acceptOrder(e) {
     const { id } = e.currentTarget.dataset;
-    
+    const currentMerchant = app.globalData.userInfo;
+
+    if (!currentMerchant || !currentMerchant.id) {
+      util.showToastInfo('请先登录商家账号');
+      return;
+    }
+
     wx.showModal({
       title: '确认接单',
       content: '接单后需要在约定时间内完成服务，确定接单吗？',
       success: async (res) => {
-        if (res.confirm) {
-          try {
-            await mockData.mockAcceptOrder(id, app.globalData.userInfo.id);
-            util.showToast('接单成功');
-            // 刷新列表
-            this.setData({ page: 1, hasMore: true });
-            this.loadNearbyOrders();
-          } catch (err) {
-            util.showToastError('接单失败');
-          }
+        if (!res.confirm) {
+          return;
+        }
+
+        try {
+          await mockData.mockAcceptOrder(id, currentMerchant.id);
+          util.showToast('接单成功');
+          this.setData({ page: 1, hasMore: true, orderList: [] });
+          this.loadNearbyOrders();
+        } catch (err) {
+          util.showToastError('接单失败');
         }
       }
     });
   },
 
-  // 查看订单详情
   viewOrderDetail(e) {
     const { id } = e.currentTarget.dataset;
     wx.navigateTo({
@@ -124,17 +117,20 @@ Page({
     });
   },
 
-  // 联系客户
   contactClient(e) {
     const { userId } = e.currentTarget.dataset;
-    if (userId) {
-      wx.navigateTo({
-        url: `/pages/chat/chat?userId=${userId}`
-      });
+    const merchantId = app.globalData.userInfo && app.globalData.userInfo.id;
+
+    if (!userId || !merchantId) {
+      util.showToastInfo('当前暂无可用会话');
+      return;
     }
+
+    wx.navigateTo({
+      url: `/pages/chat/chat?userId=${userId}&merchantId=${merchantId}`
+    });
   },
 
-  // 返回
   goBack() {
     wx.navigateBack();
   }

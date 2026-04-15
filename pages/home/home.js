@@ -3,6 +3,13 @@ const app = getApp();
 const util = require('../../utils/util');
 const mockData = require('../../utils/mockData');
 
+function buildChatUrl(order, fallbackMerchantId) {
+  const currentUser = app.globalData.userInfo || {};
+  const userId = (order && order.clientId) || currentUser.id || 'user_001';
+  const merchantId = (order && order.merchantId) || fallbackMerchantId || 'merchant_001';
+  return `/pages/chat/chat?userId=${userId}&merchantId=${merchantId}`;
+}
+
 Page({
   data: {
     userInfo: null,
@@ -10,7 +17,7 @@ Page({
     bannerList: [],
     categoryList: [],
     orderList: [],
-    showPostBtn: true, // 是否显示发布按钮
+    showPostBtn: true,
     loading: true
   },
 
@@ -19,24 +26,23 @@ Page({
   },
 
   onShow() {
-    // 每次显示时刷新数据
-    if (app.globalData.isLoggedIn) {
-      this.refreshData();
-    }
+    this.initPage();
   },
 
-  // 初始化页面
   initPage() {
+    const userInfo = app.globalData.userInfo;
+    const userType = app.globalData.userType || 'client';
+
     this.setData({
-      userInfo: app.globalData.userInfo,
-      userType: app.globalData.userType || 'client'
+      userInfo,
+      userType,
+      showPostBtn: userType === 'client'
     });
-    
+
     this.loadMockData();
     this.refreshData();
   },
 
-  // 加载模拟数据
   loadMockData() {
     const banners = [
       {
@@ -66,24 +72,22 @@ Page({
     });
   },
 
-  // 刷新数据
   async refreshData() {
     this.setData({ loading: true });
 
     try {
-      const userType = app.globalData.userType;
+      const userType = app.globalData.userType || 'client';
+      const currentUser = app.globalData.userInfo || {};
+      const allOrders = mockData.getMockOrders();
       let orderList = [];
 
       if (userType === 'client') {
-        // 客户端显示进行中的订单
-        orderList = mockData.getMockOrders().filter(o => 
-          ['pending', 'accepted', 'processing'].includes(o.status)
-        );
+        orderList = allOrders.filter((order) => {
+          const isCurrentUserOrder = !currentUser.id || order.clientId === currentUser.id;
+          return isCurrentUserOrder && ['pending', 'accepted', 'processing'].includes(order.status);
+        });
       } else {
-        // 商家端显示待处理的订单
-        orderList = mockData.getMockOrders().filter(o => 
-          o.status === 'pending'
-        );
+        orderList = allOrders.filter((order) => order.status === 'pending');
       }
 
       this.setData({
@@ -97,20 +101,13 @@ Page({
     }
   },
 
-  // 点击分类
   onCategoryTap(e) {
     const { name } = e.currentTarget.dataset;
-    // 可以跳转到分类详情页
     util.showToastInfo(`选择了${name}`);
   },
 
-  // 点击横幅
-  onBannerTap(e) {
-    const { id } = e.currentTarget.dataset;
-    // 跳转到活动详情
-  },
+  onBannerTap() {},
 
-  // 点击订单卡片
   onOrderTap(e) {
     const { id } = e.currentTarget.dataset;
     wx.navigateTo({
@@ -118,21 +115,46 @@ Page({
     });
   },
 
-  // 发布订单
   goToPost() {
     wx.navigateTo({
       url: '/pages/post/post'
     });
   },
 
-  // 查看全部订单
   viewAllOrders() {
     wx.switchTab({
       url: '/pages/orderList/orderList'
     });
   },
 
-  // 下拉刷新
+  goToProfile() {
+    wx.switchTab({
+      url: '/pages/profile/profile'
+    });
+  },
+
+  goToChat() {
+    const userType = app.globalData.userType || 'client';
+    const currentUser = app.globalData.userInfo || {};
+    const orders = mockData.getMockOrders();
+    let targetOrder;
+
+    if (userType === 'client') {
+      targetOrder = orders.find((order) => order.clientId === currentUser.id && order.merchantId) || orders.find((order) => order.merchantId);
+    } else {
+      targetOrder = orders.find((order) => order.merchantId === currentUser.id) || orders.find((order) => order.merchantId);
+    }
+
+    if (!targetOrder) {
+      util.showToastInfo('暂无可用会话');
+      return;
+    }
+
+    wx.navigateTo({
+      url: buildChatUrl(targetOrder, currentUser.id)
+    });
+  },
+
   onPullDownRefresh() {
     this.refreshData();
     setTimeout(() => {
@@ -140,12 +162,8 @@ Page({
     }, 500);
   },
 
-  // 页面上拉触底
-  onReachBottom() {
-    // 加载更多
-  },
+  onReachBottom() {},
 
-  // 跳转到商家中心
   goToMerchant() {
     wx.navigateTo({
       url: '/pages/merchant/merchant'

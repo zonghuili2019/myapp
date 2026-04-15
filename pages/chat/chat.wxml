@@ -1,6 +1,5 @@
 <!--pages/chat/chat.wxml-->
 <view class="container" wx:if="{{targetInfo}}">
-  <!-- 聊天头部 -->
   <view class="chat-header">
     <view class="header-left" bindtap="goBack">
       <text class="back-icon">‹</text>
@@ -14,9 +13,8 @@
     </view>
   </view>
 
-  <!-- 消息列表 -->
-  <scroll-view 
-    class="message-list" 
+  <scroll-view
+    class="message-list"
     scroll-y="{{true}}"
     scroll-into-view="{{scrollToView}}"
     scroll-with-animation="{{scrollWithAnimation}}"
@@ -28,18 +26,16 @@
       </view>
     </view>
 
-    <view 
+    <view
       class="message-item {{item.isSent ? 'sent' : 'received'}}"
       wx:for="{{messageList}}"
       wx:key="id"
       id="{{item.id}}"
       data-index="{{index}}"
-      longpress="onLongPress"
+      bindlongpress="onLongPress"
     >
-      <!-- 头像 -->
       <image class="avatar" src="{{item.senderAvatar}}" mode="aspectFill"></image>
-      
-      <!-- 消息内容 -->
+
       <view class="message-content">
         <text class="message-sender">{{item.senderName}}</text>
         <view class="message-body" wx:if="{{item.type === 'text'}}">
@@ -51,13 +47,10 @@
       </view>
     </view>
 
-    <!-- 底部占位 -->
     <view class="list-bottom"></view>
   </scroll-view>
 
-  <!-- 输入区域 -->
   <view class="input-area">
-    <!-- 工具栏 -->
     <view class="toolbar">
       <view class="toolbar-item" bindtap="chooseImage">
         <text class="toolbar-icon">🖼️</text>
@@ -67,11 +60,10 @@
       </view>
     </view>
 
-    <!-- 输入框 -->
     <view class="input-wrapper">
-      <input 
-        class="message-input" 
-        placeholder="输入消息..." 
+      <input
+        class="message-input"
+        placeholder="输入消息..."
         value="{{inputText}}"
         bindinput="onInputChange"
         confirm-type="send"
@@ -84,7 +76,6 @@
   </view>
 </view>
 
-<!-- 加载状态 -->
 <view class="loading" wx:else>
   <view class="loading-spinner"></view>
   <text class="loading-text">加载中...</text>

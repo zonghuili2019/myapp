@@ -1,44 +1,42 @@
 <!--pages/orderList/orderList.wxml-->
 <view class="container">
-  <!-- 筛选标签 -->
   <view class="filter-tabs">
-    <view 
-      class="filter-tab {{status === '' ? 'active' : ''}}" 
+    <view
+      class="filter-tab {{status === '' ? 'active' : ''}}"
       bindtap="filterByStatus"
       data-status=""
     >全部</view>
-    <view 
-      class="filter-tab {{status === 'pending' ? 'active' : ''}}" 
+    <view
+      class="filter-tab {{status === 'pending' ? 'active' : ''}}"
       bindtap="filterByStatus"
       data-status="pending"
     >待接单</view>
-    <view 
-      class="filter-tab {{status === 'accepted' ? 'active' : ''}}" 
+    <view
+      class="filter-tab {{status === 'accepted' ? 'active' : ''}}"
       bindtap="filterByStatus"
       data-status="accepted"
     >已接单</view>
-    <view 
-      class="filter-tab {{status === 'processing' ? 'active' : ''}}" 
+    <view
+      class="filter-tab {{status === 'processing' ? 'active' : ''}}"
       bindtap="filterByStatus"
       data-status="processing"
     >服务中</view>
-    <view 
-      class="filter-tab {{status === 'completed' ? 'active' : ''}}" 
+    <view
+      class="filter-tab {{status === 'completed' ? 'active' : ''}}"
       bindtap="filterByStatus"
       data-status="completed"
     >已完成</view>
-    <view 
-      class="filter-tab {{status === 'cancelled' ? 'active' : ''}}" 
+    <view
+      class="filter-tab {{status === 'cancelled' ? 'active' : ''}}"
       bindtap="filterByStatus"
       data-status="cancelled"
     >已取消</view>
   </view>
 
-  <!-- 订单列表 -->
   <view class="order-list" wx:if="{{orderList.length > 0}}">
-    <view 
-      class="order-card" 
-      wx:for="{{orderList}}" 
+    <view
+      class="order-card"
+      wx:for="{{orderList}}"
       wx:key="id"
       bindtap="viewOrderDetail"
       data-id="{{item.id}}"
@@ -46,7 +44,7 @@
       <view class="order-top">
         <view class="order-status">
           <text class="status-dot {{item.status}}"></text>
-          <text class="status-text">{{getStatusText(item.status)}}</text>
+          <text class="status-text">{{item.statusText}}</text>
         </view>
         <text class="order-time">{{item.createdAt}}</text>
       </view>
@@ -67,43 +65,38 @@
         <text class="location-text">{{item.clientLocation.address}}</text>
       </view>
 
-      <!-- 操作按钮 -->
       <view class="order-actions" wx:if="{{userType === 'client'}}">
-        <view class="action-btn" bindtap="contactOther" data-user-id="{{item.merchantId}}" wx:if="{{item.merchantId}}">
+        <view
+          class="action-btn"
+          catchtap="contactOther"
+          data-user-id="{{item.clientId}}"
+          data-merchant-id="{{item.merchantId}}"
+          wx:if="{{item.merchantId}}"
+        >
           <text>联系商家</text>
         </view>
       </view>
 
       <view class="order-actions" wx:else>
-        <view class="action-btn" bindtap="contactOther" data-user-id="{{item.clientId}}">
+        <view
+          class="action-btn"
+          catchtap="contactOther"
+          data-user-id="{{item.clientId}}"
+          data-merchant-id="{{item.merchantId}}"
+        >
           <text>联系客户</text>
         </view>
       </view>
     </view>
   </view>
 
-  <!-- 空状态 -->
   <view class="empty-section" wx:else>
     <view class="empty-icon">📭</view>
     <text class="empty-text">暂无订单</text>
   </view>
 
-  <!-- 加载状态 -->
   <view class="loading-more" wx:if="{{loading && orderList.length > 0}}">
     <view class="loading-spinner"></view>
     <text class="loading-text">加载中...</text>
   </view>
 </view>
-
-<script>
-function getStatusText(status) {
-  const statusMap = {
-    'pending': '待接单',
-    'accepted': '已接单',
-    'processing': '服务中',
-    'completed': '已完成',
-    'cancelled': '已取消'
-  };
-  return statusMap[status] || '未知状态';
-}
-</script>

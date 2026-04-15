@@ -1,14 +1,12 @@
 // pages/profile/profile.js - 个人中心页
 const app = getApp();
 const util = require('../../utils/util');
-const mockData = require('../../utils/mockData');
 
 Page({
   data: {
     userInfo: null,
     userType: 'client',
-    location: null,
-    showLogoutDialog: false
+    location: null
   },
 
   onLoad() {
@@ -19,7 +17,6 @@ Page({
     this.loadUserInfo();
   },
 
-  // 加载用户信息
   loadUserInfo() {
     this.setData({
       userInfo: app.globalData.userInfo,
@@ -28,31 +25,25 @@ Page({
     });
   },
 
-  // 获取位置
-  async getLocation() {
+  getLocation() {
     util.showLoading('获取位置中...');
-    try {
-      const location = await mockData.getCurrentLocation();
-      app.getLocation((success, data) => {
-        if (success) {
-          this.setData({ location: data });
-        }
-      });
-    } catch (err) {
-      util.showToastInfo('获取位置失败');
-    } finally {
+    app.getLocation((success, data) => {
       util.hideLoading();
-    }
+      if (success) {
+        this.setData({ location: data });
+        util.showToast('位置已更新');
+        return;
+      }
+      util.showToastInfo('获取位置失败');
+    });
   },
 
-  // 编辑资料
   editProfile() {
     wx.navigateTo({
       url: '/pages/register/register'
     });
   },
 
-  // 联系客服
   contactService() {
     wx.showModal({
       title: '联系我们',
@@ -61,7 +52,6 @@ Page({
     });
   },
 
-  // 意见反馈
   feedback() {
     wx.showModal({
       title: '意见反馈',
@@ -71,7 +61,6 @@ Page({
     });
   },
 
-  // 关于我们
   aboutUs() {
     wx.showModal({
       title: '关于我们',
@@ -80,7 +69,6 @@ Page({
     });
   },
 
-  // 用户协议
   userAgreement() {
     wx.showModal({
       title: '用户协议',
@@ -89,7 +77,6 @@ Page({
     });
   },
 
-  // 隐私政策
   privacyPolicy() {
     wx.showModal({
       title: '隐私政策',
@@ -98,41 +85,36 @@ Page({
     });
   },
 
-  // 退出登录
   logout() {
-    this.setData({ showLogoutDialog: true });
+    wx.showModal({
+      title: '确认退出',
+      content: '确定要退出登录吗？',
+      success: (res) => {
+        if (!res.confirm) {
+          return;
+        }
+
+        app.clearLoginStatus();
+        util.showToast('已退出登录');
+
+        setTimeout(() => {
+          wx.reLaunch({
+            url: '/pages/index/index'
+          });
+        }, 800);
+      }
+    });
   },
 
-  // 确认退出
-  confirmLogout() {
-    this.setData({ showLogoutDialog: false });
-
-    // 清除登录状态
-    wx.removeStorageSync('token');
-    wx.removeStorageSync('userType');
-    
-    app.setLoginStatus(null, null, null);
-    app.globalData.userInfo = null;
-    app.globalData.userType = null;
-
-    util.showToast('已退出登录');
-
-    setTimeout(() => {
-      wx.reLaunch({
-        url: '/pages/index/index'
-      });
-    }, 1500);
-  },
-
-  // 取消退出
-  cancelLogout() {
-    this.setData({ showLogoutDialog: false });
-  },
-
-  // 返回首页
   goHome() {
     wx.switchTab({
       url: '/pages/home/home'
+    });
+  },
+
+  goToLogin() {
+    wx.reLaunch({
+      url: '/pages/index/index'
     });
   }
 });

@@ -3,13 +3,20 @@ const app = getApp();
 const util = require('../../utils/util');
 const mockData = require('../../utils/mockData');
 
+const STATUS_TEXT_MAP = {
+  pending: '待接单',
+  accepted: '已接单',
+  processing: '服务中',
+  completed: '已完成',
+  cancelled: '已取消'
+};
+
 Page({
   data: {
     order: null,
+    merchantInfo: null,
     userType: 'client',
-    loading: true,
-    showCancelDialog: false,
-    showCompleteDialog: false
+    loading: true
   },
 
   onLoad(options) {
@@ -20,13 +27,22 @@ Page({
     this.loadOrderDetail(id);
   },
 
-  // 加载订单详情
   async loadOrderDetail(orderId) {
     this.setData({ loading: true });
 
     try {
       const order = await mockData.mockGetOrderDetail(orderId);
-      this.setData({ order });
+      const merchantInfo = order.merchantId
+        ? await mockData.mockGetMerchantInfo(order.merchantId)
+        : null;
+
+      this.setData({
+        order: {
+          ...order,
+          statusText: STATUS_TEXT_MAP[order.status] || '未知状态'
+        },
+        merchantInfo
+      });
     } catch (err) {
       console.error('加载订单详情失败', err);
       wx.showToast({
@@ -35,23 +51,26 @@ Page({
       });
       setTimeout(() => {
         wx.navigateBack();
-      }, 1500);
+      }, 800);
     } finally {
       this.setData({ loading: false });
     }
   },
 
-  // 联系对方
   contactOther(e) {
-    const { userId } = e.currentTarget.dataset;
-    if (userId) {
-      wx.navigateTo({
-        url: `/pages/chat/chat?userId=${userId}`
-      });
+    const { userId, merchantId } = e.currentTarget.dataset;
+    const resolvedMerchantId = merchantId || (app.globalData.userInfo && app.globalData.userInfo.id);
+
+    if (!userId || !resolvedMerchantId) {
+      util.showToastInfo('当前暂无可用会话');
+      return;
     }
+
+    wx.navigateTo({
+      url: `/pages/chat/chat?userId=${userId}&merchantId=${resolvedMerchantId}`
+    });
   },
 
-  // 拨打电话
   makePhoneCall(e) {
     const { phone } = e.currentTarget.dataset;
     if (phone) {
@@ -59,7 +78,6 @@ Page({
     }
   },
 
-  // 打开位置
   openLocation(e) {
     const { lat, lng, address } = e.currentTarget.dataset;
     if (lat && lng) {
@@ -67,51 +85,73 @@ Page({
     }
   },
 
-  // 取消订单
   cancelOrder() {
-    this.setData({ showCancelDialog: true });
-  },
+    wx.showModal({
+      title: '确认取消',
+      content: '确定要取消这个订单吗？',
+      success: async (res) => {
+        if (!res.confirm || !this.data.order) {
+          return;
+        }
 
-  // 确认取消
-  async confirmCancel() {
-    this.setData({ showCancelDialog: false });
-
-    try {
-      await mockData.mockCancelOrder(this.data.order.id);
-      util.showToast('订单已取消');
-      this.loadOrderDetail(this.data.order.id);
-    } catch (err) {
-      util.showToastError('取消失败');
-    }
-  },
-
-  // 完成订单
-  completeOrder() {
-    this.setData({ showCompleteDialog: true });
-  },
-
-  // 确认完成
-  async confirmComplete() {
-    this.setData({ showCompleteDialog: false });
-
-    try {
-      await mockData.mockCompleteOrder(this.data.order.id);
-      util.showToast('订单已完成');
-      this.loadOrderDetail(this.data.order.id);
-    } catch (err) {
-      util.showToastError('操作失败');
-    }
-  },
-
-  // 关闭弹窗
-  closeDialog() {
-    this.setData({
-      showCancelDialog: false,
-      showCompleteDialog: false
+        try {
+          await mockData.mockCancelOrder(this.data.order.id);
+          util.showToast('订单已取消');
+          this.loadOrderDetail(this.data.order.id);
+        } catch (err) {
+          util.showToastError('取消失败');
+        }
+      }
     });
   },
 
-  // 返回
+  completeOrder() {
+    wx.showModal({
+      title: '确认完成',
+      content: '确认服务已完成吗？',
+      success: async (res) => {
+        if (!res.confirm || !this.data.order) {
+          return;
+        }
+
+        try {
+          await mockData.mockCompleteOrder(this.data.order.id);
+          util.showToast('订单已完成');
+          this.loadOrderDetail(this.data.order.id);
+        } catch (err) {
+          util.showToastError('操作失败');
+        }
+      }
+    });
+  },
+
+  acceptOrder() {
+    const currentMerchant = app.globalData.userInfo;
+
+    if (!this.data.order || !currentMerchant || !currentMerchant.id) {
+      util.showToastInfo('请先登录商家账号');
+      return;
+    }
+
+    wx.showModal({
+      title: '确认接单',
+      content: '接单后需要在约定时间内完成服务，确定接单吗？',
+      success: async (res) => {
+        if (!res.confirm) {
+          return;
+        }
+
+        try {
+          await mockData.mockAcceptOrder(this.data.order.id, currentMerchant.id);
+          util.showToast('接单成功');
+          this.loadOrderDetail(this.data.order.id);
+        } catch (err) {
+          util.showToastError('接单失败');
+        }
+      }
+    });
+  },
+
   goBack() {
     wx.navigateBack();
   }

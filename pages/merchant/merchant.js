@@ -23,21 +23,20 @@ Page({
     this.loadMerchantInfo();
   },
 
-  // 加载商家信息
   async loadMerchantInfo() {
     this.setData({ loading: true });
 
     try {
-      // 获取商家信息
+      const currentMerchant = app.globalData.userInfo;
       const merchants = mockData.getMockMerchants();
-      const merchant = merchants[0];
-      
-      // 获取订单统计
-      const orders = mockData.getMockOrders();
-      const totalOrders = orders.filter(o => o.merchantId).length;
-      const pendingOrders = orders.filter(o => o.merchantId && o.status === 'accepted').length;
-      const completedOrders = orders.filter(o => o.merchantId && o.status === 'completed').length;
-      const totalRevenue = completedOrders * 2500;
+      const merchant = merchants.find((item) => currentMerchant && item.id === currentMerchant.id) || currentMerchant || merchants[0];
+      const orders = mockData.getMockOrders().filter((order) => !merchant || !merchant.id || order.merchantId === merchant.id);
+      const totalOrders = orders.length;
+      const pendingOrders = orders.filter((order) => ['accepted', 'processing'].includes(order.status)).length;
+      const completedOrders = orders.filter((order) => order.status === 'completed').length;
+      const totalRevenue = orders
+        .filter((order) => order.status === 'completed')
+        .reduce((sum, order) => sum + order.price, 0);
 
       this.setData({
         merchantInfo: merchant,
@@ -55,28 +54,39 @@ Page({
     }
   },
 
-  // 编辑商家信息
   editMerchantInfo() {
     wx.navigateTo({
       url: '/pages/register/register?type=merchant'
     });
   },
 
-  // 查看附近订单
   viewNearbyOrders() {
     wx.navigateTo({
       url: '/pages/merchantOrders/merchantOrders'
     });
   },
 
-  // 查看全部订单
   viewAllOrders() {
     wx.switchTab({
       url: '/pages/orderList/orderList'
     });
   },
 
-  // 联系客服
+  goToChat() {
+    const merchantInfo = this.data.merchantInfo || app.globalData.userInfo;
+    const order = mockData.getMockOrders().find((item) => merchantInfo && item.merchantId === merchantInfo.id) || mockData.getMockOrders().find((item) => item.clientId);
+
+    if (!order) {
+      util.showToastInfo('暂无可联系的客户');
+      return;
+    }
+
+    const merchantId = (merchantInfo && merchantInfo.id) || order.merchantId || 'merchant_001';
+    wx.navigateTo({
+      url: `/pages/chat/chat?userId=${order.clientId}&merchantId=${merchantId}`
+    });
+  },
+
   contactService() {
     wx.showModal({
       title: '联系我们',
@@ -85,14 +95,12 @@ Page({
     });
   },
 
-  // 拨打手机号
   makePhoneCall() {
     if (this.data.merchantInfo && this.data.merchantInfo.phone) {
       util.makePhoneCall(this.data.merchantInfo.phone);
     }
   },
 
-  // 打开位置
   openLocation() {
     if (this.data.merchantInfo && this.data.merchantInfo.location) {
       util.openLocation(
@@ -103,7 +111,6 @@ Page({
     }
   },
 
-  // 返回
   goBack() {
     wx.navigateBack();
   }

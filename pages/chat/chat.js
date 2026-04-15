@@ -3,6 +3,30 @@ const app = getApp();
 const util = require('../../utils/util');
 const mockData = require('../../utils/mockData');
 
+const DEFAULT_AVATAR = 'https://api.dicebear.com/7.x/avataaars/svg?seed=chat-default';
+
+function getConversationId(userId, merchantId) {
+  return `conv_${userId}_${merchantId}`;
+}
+
+function normalizeTargetInfo(targetInfo, fallbackName) {
+  if (!targetInfo) {
+    return {
+      id: '',
+      nickname: fallbackName,
+      name: fallbackName,
+      avatar: DEFAULT_AVATAR
+    };
+  }
+
+  return {
+    ...targetInfo,
+    nickname: targetInfo.nickname || targetInfo.name || fallbackName,
+    name: targetInfo.name || targetInfo.nickname || fallbackName,
+    avatar: targetInfo.avatar || targetInfo.logo || DEFAULT_AVATAR
+  };
+}
+
 Page({
   data: {
     userId: '',
@@ -11,50 +35,52 @@ Page({
     targetInfo: null,
     messageList: [],
     inputText: '',
-    showInput: true,
     loading: true,
     scrollToView: '',
     scrollWithAnimation: false
   },
 
   onLoad(options) {
-    const { userId, merchantId } = options;
-    this.setData({
-      userId,
-      merchantId
-    });
+    const resolvedParams = this.resolveConversationParams(options || {});
+    this.setData(resolvedParams);
     this.loadMessages();
   },
 
-  onShow() {
-    // 页面显示时可以刷新消息
+  resolveConversationParams(options) {
+    const userType = app.globalData.userType || 'client';
+    const currentUser = app.globalData.userInfo || {};
+    const orders = mockData.getMockOrders();
+    const fallbackOrder = orders.find((order) => order.merchantId) || orders[0] || {};
+
+    let userId = options.userId || (userType === 'client' ? currentUser.id : fallbackOrder.clientId) || 'user_001';
+    let merchantId = options.merchantId || (userType === 'merchant' ? currentUser.id : fallbackOrder.merchantId) || 'merchant_001';
+
+    if (!merchantId) {
+      merchantId = fallbackOrder.merchantId || 'merchant_001';
+    }
+
+    if (!userId) {
+      userId = fallbackOrder.clientId || 'user_001';
+    }
+
+    return { userId, merchantId };
   },
 
-  // 加载消息列表
   async loadMessages() {
     this.setData({ loading: true });
 
     try {
-      // 获取会话信息
-      const userType = app.globalData.userType;
-      let targetInfo;
-      
-      if (userType === 'client') {
-        // 客户端获取商家信息
-        const merchants = mockData.getMockMerchants();
-        targetInfo = merchants.find(m => m.id === this.data.merchantId);
-      } else {
-        // 商家端获取客户信息
-        const users = mockData.getMockUsers();
-        targetInfo = users.find(u => u.id === this.data.userId);
-      }
-
-      // 获取消息列表
-      const conversationId = `conv_${this.data.userId}_${this.data.merchantId}`;
-      const messages = await mockData.mockGetMessageList(conversationId);
-      
-      // 获取用户信息
-      const userInfo = app.globalData.userInfo;
+      const userType = app.globalData.userType || 'client';
+      const rawUserInfo = app.globalData.userInfo || (userType === 'merchant'
+        ? mockData.getMockMerchants()[0]
+        : mockData.getMockUsers()[0]);
+      const userInfo = normalizeTargetInfo(rawUserInfo, '我');
+      const targetSource = userType === 'client'
+        ? mockData.getMockMerchants().find((merchant) => merchant.id === this.data.merchantId)
+        : mockData.getMockUsers().find((user) => user.id === this.data.userId);
+      const targetInfo = normalizeTargetInfo(targetSource, '在线联系');
+      const messageResult = await mockData.mockGetMessageList(getConversationId(this.data.userId, this.data.merchantId));
+      const messages = this.normalizeMessageList((messageResult && messageResult.messages) || [], userInfo);
 
       this.setData({
         userInfo,
@@ -62,71 +88,86 @@ Page({
         messageList: messages
       });
 
-      // 滚动到底部
       this.scrollToBottom();
-
     } catch (err) {
       console.error('加载消息失败', err);
+      this.setData({
+        targetInfo: normalizeTargetInfo(null, '在线联系'),
+        messageList: []
+      });
     } finally {
       this.setData({ loading: false });
     }
   },
 
-  // 输入变化
+  normalizeMessageList(messageList, userInfo) {
+    const users = mockData.getMockUsers();
+    const merchants = mockData.getMockMerchants();
+
+    return (messageList || []).map((message) => {
+      const source = message.senderType === 'merchant'
+        ? merchants.find((merchant) => merchant.id === message.senderId)
+        : users.find((user) => user.id === message.senderId);
+      const normalizedSource = normalizeTargetInfo(source, message.senderType === 'merchant' ? '商家' : '用户');
+
+      return {
+        ...message,
+        senderName: message.senderName || normalizedSource.nickname || normalizedSource.name,
+        senderAvatar: message.senderAvatar || normalizedSource.avatar,
+        isSent: message.senderId === userInfo.id || !!message.isSent
+      };
+    });
+  },
+
   onInputChange(e) {
     this.setData({ inputText: e.detail.value });
   },
 
-  // 发送消息
-  async sendMessage() {
+  sendMessage() {
     const { inputText, userId, merchantId, userInfo } = this.data;
-    
-    if (!inputText.trim()) return;
 
-    try {
-      const userType = app.globalData.userType;
-      const conversationId = `conv_${userId}_${merchantId}`;
-      
-      // 添加发送消息
-      const sentMessage = {
-        id: `msg_${Date.now()}`,
-        senderId: userInfo.id,
-        senderType: userType,
-        senderName: userInfo.nickname,
-        senderAvatar: userInfo.avatar,
-        content: inputText,
-        type: 'text',
-        isSent: true,
-        createdAt: util.formatDate(new Date(), 'HH:mm')
-      };
-
-      // 更新消息列表
-      const newMessageList = [...this.data.messageList, sentMessage];
-      this.setData({
-        messageList: newMessageList,
-        inputText: ''
-      });
-
-      // 滚动到底部
-      this.scrollToBottom();
-
-      // 模拟接收回复
-      setTimeout(() => {
-        this.simulateReply(inputText);
-      }, 1500);
-
-    } catch (err) {
-      console.error('发送消息失败', err);
+    if (!inputText.trim()) {
+      return;
     }
+
+    const userType = app.globalData.userType || 'client';
+    const sentMessage = {
+      id: `msg_${Date.now()}`,
+      senderId: userInfo.id,
+      senderType: userType,
+      senderName: userInfo.nickname || userInfo.name,
+      senderAvatar: userInfo.avatar,
+      content: inputText,
+      type: 'text',
+      isSent: true,
+      createdAt: util.formatDate(new Date(), 'HH:mm')
+    };
+
+    const newMessageList = this.data.messageList.concat(sentMessage);
+    this.setData({
+      messageList: newMessageList,
+      inputText: ''
+    });
+
+    mockData.mockSendMessage({
+      userId,
+      merchantId,
+      senderId: userInfo.id,
+      senderType: userType,
+      content: inputText
+    });
+
+    this.scrollToBottom();
+
+    setTimeout(() => {
+      this.simulateReply(inputText);
+    }, 800);
   },
 
-  // 模拟对方回复
   simulateReply(content) {
     const { userId, merchantId, targetInfo } = this.data;
-    
-    if (!targetInfo) return;
+    const userType = app.globalData.userType || 'client';
 
-    const userType = app.globalData.userType;
     const replyMessage = {
       id: `msg_${Date.now()}`,
       senderId: userType === 'client' ? merchantId : userId,
@@ -139,16 +180,14 @@ Page({
       createdAt: util.formatDate(new Date(), 'HH:mm')
     };
 
-    const newMessageList = [...this.data.messageList, replyMessage];
     this.setData({
-      messageList: newMessageList
+      messageList: this.data.messageList.concat(replyMessage)
     });
 
     this.scrollToBottom();
   },
 
-  // 生成回复内容
-  generateReply(content) {
+  generateReply() {
     const replies = [
       '好的，我收到了，正在处理中。',
       '没问题，我会尽快为您处理。',
@@ -160,22 +199,22 @@ Page({
     return replies[Math.floor(Math.random() * replies.length)];
   },
 
-  // 滚动到底部
   scrollToBottom() {
-    const messageId = this.data.messageList[this.data.messageList.length - 1]?.id;
-    if (messageId) {
+    const messageList = this.data.messageList;
+    const lastMessage = messageList[messageList.length - 1];
+
+    if (lastMessage && lastMessage.id) {
       this.setData({
-        scrollToView: messageId,
+        scrollToView: lastMessage.id,
         scrollWithAnimation: true
       });
     }
   },
 
-  // 长按消息
   onLongPress(e) {
     const { index } = e.currentTarget.dataset;
     const message = this.data.messageList[index];
-    
+
     if (message && message.isSent) {
       wx.showActionSheet({
         itemList: ['撤回消息'],
@@ -188,17 +227,14 @@ Page({
     }
   },
 
-  // 撤回消息
   recallMessage(index) {
-    const messageList = [...this.data.messageList];
+    const messageList = this.data.messageList.slice();
     messageList[index].content = '[消息已撤回]';
     messageList[index].recalled = true;
-    
     this.setData({ messageList });
     util.showToast('消息已撤回');
   },
 
-  // 语音输入
   onVoiceInput() {
     wx.showModal({
       title: '语音输入',
@@ -207,31 +243,29 @@ Page({
     });
   },
 
-  // 选择图片
   chooseImage() {
+    const userInfo = this.data.userInfo;
+
     wx.chooseImage({
       count: 1,
       sizeType: ['original', 'compressed'],
       sourceType: ['album', 'camera'],
       success: (res) => {
         const tempFilePath = res.tempFilePaths[0];
-        
-        // 模拟发送图片消息
         const sentMessage = {
           id: `msg_${Date.now()}`,
-          senderId: app.globalData.userInfo.id,
-          senderType: app.globalData.userType,
-          senderName: app.globalData.userInfo.nickname,
-          senderAvatar: app.globalData.userInfo.avatar,
+          senderId: userInfo.id,
+          senderType: app.globalData.userType || 'client',
+          senderName: userInfo.nickname || userInfo.name,
+          senderAvatar: userInfo.avatar,
           content: tempFilePath,
           type: 'image',
           isSent: true,
           createdAt: util.formatDate(new Date(), 'HH:mm')
         };
 
-        const newMessageList = [...this.data.messageList, sentMessage];
         this.setData({
-          messageList: newMessageList
+          messageList: this.data.messageList.concat(sentMessage)
         });
 
         this.scrollToBottom();
@@ -239,7 +273,6 @@ Page({
     });
   },
 
-  // 返回
   goBack() {
     wx.navigateBack();
   }
