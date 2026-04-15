@@ -2,9 +2,23 @@
 
 const util = require('./util');
 
+const DEFAULT_LOCATION = {
+  latitude: 22.5431,
+  longitude: 114.0579,
+  address: '深圳市南山区科技园'
+};
+
+function buildConversationId(userId, merchantId) {
+  return `conv_${userId}_${merchantId}`;
+}
+
+function getDefaultLocation() {
+  return util.deepClone(DEFAULT_LOCATION);
+}
+
 // 模拟延迟
 function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 // 模拟用户数据
@@ -28,8 +42,8 @@ const mockUsers = [
     phone: '139****5678',
     userType: 'client',
     location: {
-      latitude: 22.5450,
-      longitude: 114.0550,
+      latitude: 22.545,
+      longitude: 114.055,
       address: '深圳市南山区商业中心'
     }
   }
@@ -43,8 +57,8 @@ const mockMerchants = [
     logo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=merchant1',
     phone: '138****9012',
     location: {
-      latitude: 22.5400,
-      longitude: 114.0500,
+      latitude: 22.54,
+      longitude: 114.05,
       address: '深圳市南山区跑腿服务站'
     },
     rating: 4.8,
@@ -56,8 +70,8 @@ const mockMerchants = [
     logo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=merchant2',
     phone: '139****3456',
     location: {
-      latitude: 22.5480,
-      longitude: 114.0600,
+      latitude: 22.548,
+      longitude: 114.06,
       address: '深圳市南山区代驾服务中心'
     },
     rating: 4.6,
@@ -81,9 +95,9 @@ const mockOrders = [
     },
     title: '文件取送',
     description: '需要从科技园取一份合同文件送到福田区',
-    status: 'pending', // pending, processing, accepted, completed, cancelled
+    status: 'pending',
     createdAt: '2026-04-15 10:30:00',
-    price: 2500 // 25元
+    price: 2500
   },
   {
     id: 'order_002',
@@ -93,15 +107,15 @@ const mockOrders = [
     clientName: '小红',
     clientPhone: '139****5678',
     clientLocation: {
-      latitude: 22.5450,
-      longitude: 114.0550,
+      latitude: 22.545,
+      longitude: 114.055,
       address: '深圳市南山区商业中心'
     },
     title: '代买午餐',
     description: '帮我买一份宫保鸡丁和一份米饭',
     status: 'pending',
     createdAt: '2026-04-15 11:00:00',
-    price: 3500 // 35元
+    price: 3500
   },
   {
     id: 'order_003',
@@ -119,7 +133,7 @@ const mockOrders = [
     description: '急需感冒药，尽快送达',
     status: 'accepted',
     createdAt: '2026-04-15 09:00:00',
-    price: 1800 // 18元
+    price: 1800
   }
 ];
 
@@ -153,7 +167,7 @@ const mockMessages = [
 /**
  * 模拟登录
  */
-async function mockLogin(code) {
+async function mockLogin() {
   await delay(500);
   return {
     token: `token_${util.generateId()}`,
@@ -173,9 +187,11 @@ async function mockRegister(data) {
     avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${util.generateId()}`,
     phone: data.phone,
     userType: data.userType,
-    location: data.location
+    location: data.location || getDefaultLocation()
   };
+
   mockUsers.push(newUser);
+
   return {
     token: `token_${util.generateId()}`,
     userType: data.userType,
@@ -189,17 +205,16 @@ async function mockRegister(data) {
 async function mockGetOrderList(params = {}) {
   await delay(300);
   let orders = [...mockOrders];
-  
+
   if (params.status) {
-    orders = orders.filter(o => o.status === params.status);
+    orders = orders.filter((order) => order.status === params.status);
   }
-  
-  // 模拟商家只能看到已接单的订单
+
   const userType = wx.getStorageSync('userType');
   if (userType === 'merchant') {
-    orders = orders.filter(o => o.merchantId);
+    orders = orders.filter((order) => order.merchantId);
   }
-  
+
   return {
     list: orders,
     total: orders.length
@@ -212,22 +227,31 @@ async function mockGetOrderList(params = {}) {
 async function mockGetNearbyOrders(params = {}) {
   await delay(500);
   const { latitude, longitude, radius = 3000 } = params;
-  const center = { lat: latitude || 22.5431, lng: longitude || 114.0579 };
-  
-  // 计算距离并筛选
+  const center = {
+    lat: latitude || DEFAULT_LOCATION.latitude,
+    lng: longitude || DEFAULT_LOCATION.longitude
+  };
+
   const nearbyOrders = mockOrders
-    .filter(o => !o.merchantId) // 只看未接单的
-    .map(o => {
+    .filter((order) => !order.merchantId)
+    .map((order) => {
       const distance = util.getDistance(
-        center.lat, center.lng,
-        o.clientLocation.latitude, o.clientLocation.longitude
+        center.lat,
+        center.lng,
+        order.clientLocation.latitude,
+        order.clientLocation.longitude
       );
-      return { ...o, distance: Math.round(distance * 1000) };
+
+      return {
+        ...order,
+        distance: Math.round(distance * 1000)
+      };
     })
-    .filter(o => o.distance <= radius);
-  
+    .filter((order) => order.distance <= radius)
+    .sort((a, b) => a.distance - b.distance);
+
   return {
-    list: nearbyOrders.sort((a, b) => a.distance - b.distance),
+    list: nearbyOrders,
     total: nearbyOrders.length
   };
 }
@@ -244,13 +268,14 @@ async function mockCreateOrder(data) {
     merchantId: null,
     clientName: data.clientName,
     clientPhone: data.clientPhone,
-    clientLocation: data.location,
+    clientLocation: data.location || getDefaultLocation(),
     title: data.title,
     description: data.description,
     status: 'pending',
     createdAt: util.formatDate(new Date(), 'YYYY-MM-DD HH:mm:ss'),
-    price: Math.floor(Math.random() * 50 + 10) * 100
+    price: data.price || Math.floor(Math.random() * 50 + 10) * 100
   };
+
   mockOrders.unshift(newOrder);
   return newOrder;
 }
@@ -260,13 +285,15 @@ async function mockCreateOrder(data) {
  */
 async function mockAcceptOrder(orderId, merchantId) {
   await delay(300);
-  const order = mockOrders.find(o => o.id === orderId);
-  if (order) {
-    order.merchantId = merchantId;
-    order.status = 'accepted';
-    return order;
+  const order = mockOrders.find((item) => item.id === orderId);
+
+  if (!order) {
+    throw new Error('订单不存在');
   }
-  throw new Error('订单不存在');
+
+  order.merchantId = merchantId;
+  order.status = 'accepted';
+  return order;
 }
 
 /**
@@ -274,13 +301,13 @@ async function mockAcceptOrder(orderId, merchantId) {
  */
 async function mockGetConversationList() {
   await delay(300);
-  return mockMessages.map(conv => ({
-    id: conv.conversationId,
-    userId: conv.userId,
-    merchantId: conv.merchantId,
-    lastMessage: conv.messages[conv.messages.length - 1],
+  return mockMessages.map((conversation) => ({
+    id: conversation.conversationId,
+    userId: conversation.userId,
+    merchantId: conversation.merchantId,
+    lastMessage: conversation.messages[conversation.messages.length - 1],
     unreadCount: 0,
-    createdAt: conv.messages[0].createdAt
+    createdAt: conversation.messages[0] && conversation.messages[0].createdAt
   }));
 }
 
@@ -289,7 +316,7 @@ async function mockGetConversationList() {
  */
 async function mockGetMessageList(conversationId) {
   await delay(300);
-  const conversation = mockMessages.find(c => c.conversationId === conversationId);
+  const conversation = mockMessages.find((item) => item.conversationId === conversationId);
   return conversation ? { messages: conversation.messages } : { messages: [] };
 }
 
@@ -298,47 +325,52 @@ async function mockGetMessageList(conversationId) {
  */
 async function mockSendMessage(data) {
   await delay(300);
-  const conversation = mockMessages.find(
-    c => c.userId === data.userId && c.merchantId === data.merchantId
-  );
-  
+  const conversationId = buildConversationId(data.userId, data.merchantId);
+  const conversation = mockMessages.find((item) => item.conversationId === conversationId);
+
   const newMessage = {
     id: `msg_${Date.now()}`,
     senderId: data.senderId,
     senderType: data.senderType,
     content: data.content,
-    type: 'text',
+    type: data.type || 'text',
     createdAt: util.formatDate(new Date(), 'YYYY-MM-DD HH:mm:ss')
   };
-  
+
   if (conversation) {
     conversation.messages.push(newMessage);
   } else {
     mockMessages.push({
-      conversationId: `conv_${util.generateId()}`,
+      conversationId,
       userId: data.userId,
       merchantId: data.merchantId,
       messages: [newMessage]
     });
   }
-  
+
   return newMessage;
 }
 
 /**
  * 模拟获取用户信息
  */
-async function mockGetUserInfo() {
+async function mockGetUserInfo(userId) {
   await delay(200);
-  return mockUsers[0];
+  if (!userId) {
+    return mockUsers[0];
+  }
+  return mockUsers.find((user) => user.id === userId) || mockUsers[0];
 }
 
 /**
  * 模拟获取商家信息
  */
-async function mockGetMerchantInfo() {
+async function mockGetMerchantInfo(merchantId) {
   await delay(200);
-  return mockMerchants[0];
+  if (!merchantId) {
+    return mockMerchants[0];
+  }
+  return mockMerchants.find((merchant) => merchant.id === merchantId) || mockMerchants[0];
 }
 
 /**
@@ -351,11 +383,13 @@ async function mockMerchantRegister(data) {
     name: data.name,
     logo: `https://api.dicebear.com/7.x/avataaars/svg?seed=${util.generateId()}`,
     phone: data.phone,
-    location: data.location,
-    rating: 5.0,
+    location: data.location || getDefaultLocation(),
+    rating: 5,
     description: data.description || ''
   };
+
   mockMerchants.push(newMerchant);
+
   return {
     token: `token_${util.generateId()}`,
     userType: 'merchant',
@@ -368,8 +402,10 @@ async function mockMerchantRegister(data) {
  */
 async function mockGetOrderDetail(orderId) {
   await delay(200);
-  const order = mockOrders.find(o => o.id === orderId);
-  if (!order) throw new Error('订单不存在');
+  const order = mockOrders.find((item) => item.id === orderId);
+  if (!order) {
+    throw new Error('订单不存在');
+  }
   return order;
 }
 
@@ -378,12 +414,12 @@ async function mockGetOrderDetail(orderId) {
  */
 async function mockCancelOrder(orderId) {
   await delay(300);
-  const order = mockOrders.find(o => o.id === orderId);
-  if (order) {
-    order.status = 'cancelled';
-    return order;
+  const order = mockOrders.find((item) => item.id === orderId);
+  if (!order) {
+    throw new Error('订单不存在');
   }
-  throw new Error('订单不存在');
+  order.status = 'cancelled';
+  return order;
 }
 
 /**
@@ -391,12 +427,12 @@ async function mockCancelOrder(orderId) {
  */
 async function mockCompleteOrder(orderId) {
   await delay(300);
-  const order = mockOrders.find(o => o.id === orderId);
-  if (order) {
-    order.status = 'completed';
-    return order;
+  const order = mockOrders.find((item) => item.id === orderId);
+  if (!order) {
+    throw new Error('订单不存在');
   }
-  throw new Error('订单不存在');
+  order.status = 'completed';
+  return order;
 }
 
 /**
@@ -404,12 +440,12 @@ async function mockCompleteOrder(orderId) {
  */
 async function mockGetMerchantOrders(params = {}) {
   await delay(300);
-  let orders = mockOrders.filter(o => o.merchantId);
-  
+  let orders = mockOrders.filter((order) => order.merchantId);
+
   if (params.status) {
-    orders = orders.filter(o => o.status === params.status);
+    orders = orders.filter((order) => order.status === params.status);
   }
-  
+
   return {
     list: orders,
     total: orders.length
@@ -456,7 +492,9 @@ module.exports = {
   mockCancelOrder,
   mockCompleteOrder,
   mockGetMerchantOrders,
-  // 获取模拟数据
+  getCurrentLocation,
+  chooseLocation,
+  getDefaultLocation,
   getMockOrders: () => mockOrders,
   getMockMerchants: () => mockMerchants,
   getMockUsers: () => mockUsers
